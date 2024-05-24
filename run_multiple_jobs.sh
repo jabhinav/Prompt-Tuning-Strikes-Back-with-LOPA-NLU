@@ -9,7 +9,7 @@ for task in "${tasks[@]}"; do
           # # Create a unique directory name
           log_dir="logging/${task}_t${t_num}"
 
-          accelerate launch --config_file config_basic_nofp16.yaml tune_pt_baseline.py --dataset_name "$task" --num_virtual_tokens "$t_num" --run_name "GLUE_${task}_PT_t${t_num}" --log_dir "$log_dir"
+          accelerate launch --config_file config_files/config_basic_nofp16.yaml tune_foundation_model.py --peft_method pt --dataset_name "$task" --num_virtual_tokens "$t_num" --run_name "GLUE/${task}/pt_t${t_num}" --log_dir "$log_dir"
 
 #          # Remove the log file
 #          rm -r "$log_dir"
