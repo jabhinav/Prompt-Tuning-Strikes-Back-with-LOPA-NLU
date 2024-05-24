@@ -13,7 +13,7 @@ Here, the code for the NLU tasks are provided, rest of the instructions are same
   - Possible values: `lora`, `pt`, `idpg`, `lopa`, `fft`
 
 - `--dataset_name`: Name of the task to be trained on.
-  - Possible values: `mnli`, `sst-2`, `qqp`, `qnli`, `rte`, `mrpc`
+  - Possible values: `mnli`, `sst2`, `qqp`, `qnli`, `rte`, `mrpc`
 
 ## Evaluating and Getting Results
 
