@@ -1,16 +1,23 @@
-from typing import Optional, Union
+from typing import Optional
 
 import torch
+import torch.nn as nn
 from torch.nn import MSELoss, CrossEntropyLoss, BCEWithLogitsLoss
 from transformers.modeling_outputs import SequenceClassifierOutput
 
 from custom_peft import PeftIDPGModelForMaskedLM, PeftModelForMaskedLM, PeftCVAEModelForMaskedLM
-import torch.nn as nn
+from utils.xformer import load_base_model, get_huggingface_path
 
 
 class LatentPromptAttentionGenerator(torch.nn.Module):
-	def __init__(self, args, config, base, use_bias=True, freeze_base=False, MLP_h=None):
+	def __init__(self, args, use_bias=True, freeze_base=False, MLP_h=None):
 		super(LatentPromptAttentionGenerator, self).__init__()
+		
+		config, base = load_base_model(
+			args,
+			model_type=args.enc_model_type,
+			model_name_or_path=get_huggingface_path(args.enc_model_type)
+		)
 		
 		self.args = args
 		self.config = config
@@ -37,7 +44,7 @@ class LatentPromptAttentionGenerator(torch.nn.Module):
 		
 		if MLP_h is None:
 			MLP_h = hidden_dim
-			
+		
 		# Define the head for encoding the row vectors - weighs virtual tokens
 		self.row_dropout = torch.nn.Dropout(dropout_prob)
 		self.row_down_proj = torch.nn.Linear(hidden_dim, MLP_h)
@@ -69,7 +76,7 @@ class LatentPromptAttentionGenerator(torch.nn.Module):
 			attention_mask = attention_mask.to(device=input_ids.device)
 		
 		# Get the CLS token embedding
-		if self.args.lp_gen_model_type == 'roberta-large':
+		if self.args.enc_model_type == 'roberta-large':
 			x = self.base(
 				input_ids,
 				attention_mask=attention_mask,
@@ -80,7 +87,6 @@ class LatentPromptAttentionGenerator(torch.nn.Module):
 		else:
 			raise NotImplementedError
 		return x
-	
 	
 	def forward(self, input_ids, attention_mask=None, token_type_ids=None):
 		
@@ -117,15 +123,22 @@ class LatentPromptAttentionGenerator(torch.nn.Module):
 		return prompt_specific_clf_embedding
 	
 	def __str__(self):
-		return f"MyEncoder/{self.args.lp_gen_model_type}"
+		return f"MyEncoder/{self.args.enc_model_type}"
 	
 	def __repr__(self):
-		return f"MyEncoder/{self.args.lp_gen_model_type}"
+		return f"MyEncoder/{self.args.enc_model_type}"
 
 
 class IDPGSoftPromptGenerator(torch.nn.Module):
-	def __init__(self, args, config, base, use_bias=True):
+	def __init__(self, args, use_bias=True, MLP_h=256):
 		super(IDPGSoftPromptGenerator, self).__init__()
+		
+		config, base = load_base_model(
+			args,
+			model_type=args.enc_model_type,
+			model_name_or_path=get_huggingface_path(args.enc_model_type)
+		)
+		
 		self.args = args
 		self.config = config
 		self.base = base
@@ -133,20 +146,27 @@ class IDPGSoftPromptGenerator(torch.nn.Module):
 		# Base model does not require any training - freeze the weights
 		for param in self.base.parameters():
 			param.requires_grad = False
-				
+		
 		# For each virtual token, predict the embedding
 		self.config.n_virtual_tokens = self.args.total_virtual_tokens
 		self.config.word_embedding_dim = self.args.word_embedding_dim
 		
 		# Set params [Should be same as the model used for the base]
-		dropout_prob = config.hidden_dropout_prob if hasattr(config, 'hidden_dropout_prob') else config.dropout_rate if hasattr(config, 'dropout_rate') else 0.1
-		hidden_dim = config.hidden_size if hasattr(config, 'hidden_size') else config.embed_dim if hasattr(config, 'embed_dim') else 768
+		dropout_prob = config.hidden_dropout_prob if hasattr(config,
+															 'hidden_dropout_prob') else config.dropout_rate if hasattr(
+			config, 'dropout_rate') else 0.1
+		hidden_dim = config.hidden_size if hasattr(config, 'hidden_size') else config.embed_dim if hasattr(config,
+																										   'embed_dim') else 768
 		self.config_initializer_range = config.initializer_range if hasattr(config, 'initializer_range') else 0.02
+		
+		if MLP_h is None:
+			MLP_h = hidden_dim
 		
 		# Define the head for encoding all virtual tokens
 		self._dropout = torch.nn.Dropout(dropout_prob)
-		self.layer_down_project = torch.nn.Linear(hidden_dim, 256, bias=use_bias)
-		self.layer_up_project = torch.nn.Linear(256, self.config.n_virtual_tokens * self.config.word_embedding_dim, bias=use_bias)
+		self.layer_down_project = torch.nn.Linear(hidden_dim, MLP_h, bias=use_bias)
+		self.layer_up_project = torch.nn.Linear(MLP_h, self.config.n_virtual_tokens * self.config.word_embedding_dim,
+												bias=use_bias)
 		
 		self.init_predictor_head()
 	
@@ -164,18 +184,17 @@ class IDPGSoftPromptGenerator(torch.nn.Module):
 			attention_mask = attention_mask.to(device=input_ids.device)
 		
 		# Get the CLS token embedding
-		if self.args.lp_gen_model_type == 'roberta-large':
+		if self.args.enc_model_type == 'roberta-large':
 			x = self.base(
 				input_ids,
 				attention_mask=attention_mask,
 				token_type_ids=token_type_ids
 			)
 			x = x[0]
-			x = x[:, 0, :]     # take <s> which is the first token as seq. representation (equiv. to [CLS])
+			x = x[:, 0, :]  # take <s> which is the first token as seq. representation (equiv. to [CLS])
 		else:
 			raise NotImplementedError
 		return x.detach()
-		
 	
 	def forward(self, input_ids, attention_mask=None, token_type_ids=None):
 		
@@ -188,14 +207,15 @@ class IDPGSoftPromptGenerator(torch.nn.Module):
 		soft_prompt_embedding = self.layer_up_project(soft_prompt_embedding)
 		
 		# Reshape [B, N * D] -> [B, N, D]
-		soft_prompt_embedding = soft_prompt_embedding.view(-1, self.config.n_virtual_tokens, self.config.word_embedding_dim)
+		soft_prompt_embedding = soft_prompt_embedding.view(-1, self.config.n_virtual_tokens,
+														   self.config.word_embedding_dim)
 		return soft_prompt_embedding
 	
 	def __str__(self):
-		return f"IDPG/{self.args.lp_gen_model_type}"
+		return f"IDPG/{self.args.enc_model_type}"
 	
 	def __repr__(self):
-		return f"IDPG/{self.args.lp_gen_model_type}"
+		return f"IDPG/{self.args.enc_model_type}"
 
 
 class ClassificationHead(nn.Module):
@@ -220,8 +240,8 @@ class ClassificationHead(nn.Module):
 		x = self.dropout(x)
 		x = self.out_proj(x)
 		return x
-	
-	
+
+
 class ModelForSequenceClassification(nn.Module):
 	"""Base class for all models that do sequence classification."""
 	
@@ -290,7 +310,7 @@ class ModelForSequenceClassification(nn.Module):
 		return seq_emb_trainable_params + classifier_trainable_params, seq_emb_all_params + classifier_all_params
 
 
-class CVAE(torch.nn.Module):
+class LOPA(torch.nn.Module):
 	
 	def __init__(
 			self,
@@ -298,7 +318,7 @@ class CVAE(torch.nn.Module):
 			latent_prompt_gen: LatentPromptAttentionGenerator,
 			seq_classifier: PeftCVAEModelForMaskedLM
 	):
-		super(CVAE, self).__init__()
+		super(LOPA, self).__init__()
 		self.latent_prompt_gen = latent_prompt_gen
 		self.seq_classifier = seq_classifier
 		
@@ -326,10 +346,10 @@ class CVAE(torch.nn.Module):
 			mask_pos=batch['mask_pos'],
 			labels=batch['labels']
 		)
-	
+		
 		return output
-	
-	
+
+
 class IDPG(torch.nn.Module):
 	
 	def __init__(
@@ -365,7 +385,7 @@ class IDPG(torch.nn.Module):
 			mask_pos=batch['mask_pos'],
 			labels=batch['labels']
 		)
-	
+		
 		return output
 
 
@@ -378,7 +398,6 @@ class DummyModel(torch.nn.Module):
 		self.config = config
 	
 	def forward(self, batch):
-		
 		# Shift the position of the mask tokens to the right by total_virtual_tokens
 		batch['mask_pos'] = batch['mask_pos'] + self.config.total_virtual_tokens
 		

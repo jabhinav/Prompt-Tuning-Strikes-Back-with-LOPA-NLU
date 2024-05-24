@@ -26,13 +26,16 @@ def get_config():
 	
 	parser = argparse.ArgumentParser(description="Finetune a transformers model on a text classification task")
 	
+	parser.add_argument("--peft_method", type=str, default=None,
+						choices=['lopa', 'pt', 'idpg', 'lora', 'fft'])
+	
 	# #################################################### Task #################################################### #
 	parser.add_argument("--dataset_name", type=str, default='mnli', choices=list(processors.keys()))
 	parser.add_argument("--data_dir", type=str, default='./glue_data')
 	parser.add_argument("--dataset_path", type=str, default='nyu-mll/glue', choices=['nyu-mll/glue', 'super_glue'])
 	
 	# #################################################### Wandb #################################################### #
-	parser.add_argument('--wandb_logging', type=bool, default=True)
+	parser.add_argument('--wandb_logging', type=bool, default=False)
 	parser.add_argument('--project_name', type=str, default='NLU')
 	parser.add_argument('--run_name', type=str, default=None)
 	
@@ -42,7 +45,7 @@ def get_config():
 	
 	# #################################################### Model #################################################### #
 	parser.add_argument("--model_type", type=str, default=model_type)
-	parser.add_argument("--lp_gen_model_type", type=str, default=enc_model_type)
+	parser.add_argument("--enc_model_type", type=str, default=enc_model_type)
 	parser.add_argument("--lp_rank", type=int, default=4, help="Rank of the decoded row/col vectors.")
 
 	parser.add_argument("--use_fast_tokenizer", default=True,
@@ -57,7 +60,7 @@ def get_config():
 						help="Whether or not to enable to load a pretrained model whose head dimensions are different.")
 	
 	# #################################################### Training ################################################# #
-	parser.add_argument("--num_epochs", type=int, default=40, help="Total number of training epochs to perform.")
+	parser.add_argument("--num_epochs", type=int, default=2, help="Total number of training epochs to perform.")
 	# Try 1e-5 for FFT (from RoBERTa paper) and Ours,
 	# 1e-4 for LoRA / PT / IDPG
 	# else choose from 5e−3,1e−3,5e−4,1e−4,5e−5,1e−5
@@ -141,7 +144,7 @@ def get_config():
 	args.model_name_or_path = get_huggingface_path(args.model_type)
 	args.config_name = get_huggingface_path(args.model_type)
 	args.tokenizer_name = get_huggingface_path(args.model_type)
-	args.lp_gen_model_name_or_path = get_huggingface_path(args.lp_gen_model_type)
+	args.enc_model_name_or_path = get_huggingface_path(args.enc_model_type)
 	
 	# Get the task dataset
 	if args.dataset_name not in task_dir_mapping:

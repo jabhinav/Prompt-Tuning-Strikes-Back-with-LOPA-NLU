@@ -159,7 +159,7 @@ def baseline_perf_w_param_comparison():
 		elif task == 'crux-o':
 			perf_idpg = idpg_on_cruxevalO.values()
 			perf_pt = pt_on_cruxevalO.values()
-			perf_ours = ours_r2_on_cruxevalO.values()  # We chose r=2 for CruxEval-O
+			perf_ours = ours_r1_on_cruxevalO.values()  # We chose r=2 for CruxEval-O
 			perf_lora = lora_on_cruxevalO
 			
 			# Sample data for number of parameters
@@ -308,17 +308,14 @@ def ablation_on_rank_glue_w_param():
 
 def ablation_on_rank_w_param_cruxeval():
 	ranks = [1, 2, 4]
-	perf_cruxI_10t = rank_on_cruxevalI_10t.values()
-	perf_cruxO_10t = rank_on_cruxevalO_10t.values()
-	perf_cruxI_50t = rank_on_cruxevalI_50t.values()
-	perf_cruxO_50t = rank_on_cruxevalO_50t.values()
+	perf_cruxI_DS_10t = rank_on_cruxevalI_w_DS_10t.values()
+	perf_cruxO_DS_10t = rank_on_cruxevalO_w_DS_10t.values()
+	perf_cruxI_phi2_10t = rank_on_cruxevalI_w_phi2_10t.values()
+	perf_cruxO_phi2_10t = rank_on_cruxevalO_w_phi2_10t.values()
 	
 	# Sample data for number of parameters
-	params_10t = crux_ours_t10_params.values()
-	params_50t = crux_ours_t50_params.values()
-	
-	# Rescale the params such that largest is 100 and rest are scaled accordingly
-	max_params = max(max(params_10t), max(params_50t))
+	params_DS_10t = crux_ours_ds_t10_params.values()
+	params_phi2_10t = crux_ours_phi2_t10_params.values()
 	
 	# Set font size
 	plt.rcParams.update({'font.size': FONT_SIZE})  # Change 12 to the desired font size for A4 PDF
@@ -329,10 +326,11 @@ def ablation_on_rank_w_param_cruxeval():
 	# Evenly spaced x-axis values
 	x_values = np.arange(len(ranks))
 	
-	ax1.plot(x_values, perf_cruxI_10t, marker='o', label='I, m=10', color=colors[0])
-	ax1.plot(x_values, perf_cruxO_10t, marker='s', label='O, m=10', color=colors[1])
-	ax1.plot(x_values, perf_cruxI_50t, marker='^', label='I, m=50', color=colors[2])
-	ax1.plot(x_values, perf_cruxO_50t, marker='x', label='O, m=50', color=colors[3])
+	ax1.plot(x_values, perf_cruxI_DS_10t, marker='x', label='I, ds-1.3', color=colors[0])
+	ax1.plot(x_values, perf_cruxO_DS_10t, marker='o', label='O, ds-1.3', color=colors[0])
+	# Use a dotting style for phi-2
+	ax1.plot(x_values, perf_cruxI_phi2_10t, marker='x', label='I, phi-2', color=colors[1], linestyle='--')
+	ax1.plot(x_values, perf_cruxO_phi2_10t, marker='o', label='O, phi-2', color=colors[1], linestyle='--')
 	
 	ax1.set_xticks(x_values)
 	ax1.set_xticklabels(ranks)
@@ -355,14 +353,14 @@ def ablation_on_rank_w_param_cruxeval():
 	bar_pos_2 = x_values + bar_width
 	
 	# Bar plots for number of parameters
-	ax2.bar(bar_pos_1, params_10t, bar_width, label='Params(m=10)', color=colors[4], alpha=0.2)
-	ax2.bar(bar_pos_2, params_50t, bar_width, label='Params(m=50)', color=colors[4], alpha=0.4)
+	ax2.bar(bar_pos_1, params_DS_10t, bar_width, label='Params(ds-1.3)', color=colors[0], alpha=0.4)
+	ax2.bar(bar_pos_2, params_phi2_10t, bar_width, label='Params(phi-2)', color=colors[1], alpha=0.4)
 	
 	# Adding labels and legend for number of parameters
 	ax2.set_ylabel('Parameters (in millions)', color='black')
 	ax2.tick_params(axis='y', labelcolor='black')
 	
-	# ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), fancybox=True, shadow=True, ncol=2)
+	# ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.30), fancybox=True, shadow=True, ncol=2)
 	
 	# Adding grid lines to both axes
 	ax1.grid(True)
@@ -377,10 +375,10 @@ def ablation_on_rank_w_param_cruxeval():
 
 if __name__ == '__main__':
 	
-	# baseline_perf_w_param_comparison()
+	baseline_perf_w_param_comparison()
 	
-	ablation_on_rank_glue_w_param()
+	# ablation_on_rank_glue_w_param()
 	
-	ablation_on_rank_w_param_cruxeval()
+	# ablation_on_rank_w_param_cruxeval()
 
 	

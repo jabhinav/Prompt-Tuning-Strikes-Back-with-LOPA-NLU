@@ -1,15 +1,13 @@
 import os
 
 import torch
-from accelerate.logging import MultiProcessAdapter
 from transformers import RobertaConfig
 
 from custom_peft import PromptTuningConfig, TaskType, PromptTuningInit, get_peft_model
-from utils.config import get_config
+from trainers.base import BaseTrainer
 from utils.custom import is_rank_0
-from utils.model import CVAE, LatentPromptAttentionGenerator
+from utils.model import LOPA, LatentPromptAttentionGenerator
 from utils.modeling_roberta import RobertaForMaskedLM
-from utils.trainer import BaseTrainer
 from utils.xformer import load_base_model
 
 
@@ -45,17 +43,12 @@ class Trainer(BaseTrainer):
 		# 			'lm_head.decoder.weight' since LM Head is present is RobertaForCausalLM
 		# # Note 2: Also, RobertaModel by default has add_pooling_layer=True which adds a pooling layer on top of the encoder.
 		# 			Since ckpt does not have it, it will be init and throw a msg. It is fine since we are not using it.
-		lp_gen_config, lp_gen_base = load_base_model(
-			self.args,
-			model_type=self.args.lp_gen_model_type,
-			model_name_or_path=self.args.lp_gen_model_name_or_path
-		)
-		latent_prompt_gen = LatentPromptAttentionGenerator(self.args, lp_gen_config, lp_gen_base)
+		inst_specific_soft_prompt_gen = LatentPromptAttentionGenerator(self.args)
 		
-		self.logger.info("Building the Latent Prompt Generator done.")
+		self.logger.info("Building the Instance-Specific Soft Prompt Generator done.")
 		
 		# 3) Build the CVAE model
-		model = CVAE(seq_cls_config, latent_prompt_gen, seq_classifier)
+		model = LOPA(seq_cls_config, inst_specific_soft_prompt_gen, seq_classifier)
 		return seq_cls_config, model
 	
 	def init_trackers(self):
@@ -89,7 +82,7 @@ class Trainer(BaseTrainer):
 			os.makedirs(save_at)
 		
 		# Unwrap the model
-		model: CVAE = self.accelerator.unwrap_model(self.model)
+		model: LOPA = self.accelerator.unwrap_model(self.model)
 		
 		# Save the latent prompt generator
 		state_dict = model.latent_prompt_gen.state_dict()
@@ -109,16 +102,3 @@ class Trainer(BaseTrainer):
 			# print(f"[INFO] (epoch={self.epoch}) Saved the classifier head at:", os.path.join(save_at, "classifier_head.pt"))
 			print(f"[INFO] (epoch={self.epoch}) Saved the latent prompt encoder at:",
 				  os.path.join(save_at, "lp_generator.pt"))
-
-
-def main():
-	args, logger = get_config()
-	logger = MultiProcessAdapter(logger, {})  # An adapter to assist with logging in multiprocess.
-	
-	trainer = Trainer(args, logger)
-	trainer.train_loop()
-
-
-if __name__ == '__main__':
-	# $ accelerate launch --config_file config_ds_zero_stage2_no_fp16.yaml train_cvae.py
-	main()

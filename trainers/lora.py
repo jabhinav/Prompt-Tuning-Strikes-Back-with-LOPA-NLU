@@ -1,13 +1,11 @@
 import os
 
-from accelerate.logging import MultiProcessAdapter
 from peft import get_peft_model, LoraConfig
 from transformers import RobertaConfig
 
-from utils.config import get_config
+from trainers.base import BaseTrainer
 from utils.custom import is_rank_0
 from utils.modeling_roberta import RobertaForMaskedLM
-from utils.trainer import BaseTrainer
 from utils.xformer import load_base_model, LORA_IA3_TARGET_MODULES
 
 
@@ -84,17 +82,3 @@ class Trainer(BaseTrainer):
 		
 		if is_rank_0():
 			print(f"[INFO] (epoch={self.epoch}) Saved the model at:", os.path.join(save_at, "LoRA"))
-
-
-def main():
-	args, logger = get_config()
-	logger = MultiProcessAdapter(logger, {})  # An adapter to assist with logging in multiprocess.
-	
-	trainer = Trainer(args, logger)
-	trainer.train_loop()
-
-
-if __name__ == '__main__':
-	# LoRA with Roberta not working deepspeed for some reason. (Could be a library implementation issue.)
-	# $ accelerate launch --config_file config_basic_nofp16.yaml tune_lora_baseline.py
-	main()

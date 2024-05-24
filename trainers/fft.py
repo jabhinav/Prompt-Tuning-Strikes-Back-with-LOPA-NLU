@@ -1,13 +1,11 @@
 import os
 
 import torch
-from accelerate.logging import MultiProcessAdapter
 from transformers import RobertaConfig
 
-from utils.config import get_config
+from trainers.base import BaseTrainer
 from utils.custom import is_rank_0
 from utils.modeling_roberta import RobertaForMaskedLM
-from utils.trainer import BaseTrainer
 from utils.xformer import load_base_model
 
 
@@ -53,7 +51,6 @@ class Trainer(BaseTrainer):
 			labels=batch['labels']
 		)
 		return output
-
 	
 	def save(self, dir_tag: str):
 		
@@ -69,16 +66,3 @@ class Trainer(BaseTrainer):
 		
 		if is_rank_0():
 			print(f"[INFO] (epoch={self.epoch}) Saved the model at:", os.path.join(save_at, "nlu_model.pt"))
-
-
-def main():
-	args, logger = get_config()
-	logger = MultiProcessAdapter(logger, {})  # An adapter to assist with logging in multiprocess.
-	
-	trainer = Trainer(args, logger)
-	trainer.train_loop()
-
-
-if __name__ == '__main__':
-	# $ accelerate launch --config_file config_ds_zero_stage2_no_fp16.yaml tune_fft_baseline.py
-	main()

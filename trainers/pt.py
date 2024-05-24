@@ -1,15 +1,13 @@
 import os
 
-from accelerate.logging import MultiProcessAdapter
-from custom_peft import get_peft_model, PromptTuningConfig, TaskType, PromptTuningInit
 from transformers import RobertaConfig
 
-from utils.config import get_config
+from custom_peft import get_peft_model, PromptTuningConfig, TaskType, PromptTuningInit
+from trainers.base import BaseTrainer
 from utils.custom import is_rank_0
-from utils.modeling_roberta import RobertaForMaskedLM
-from utils.trainer import BaseTrainer
-from utils.xformer import load_base_model
 from utils.model import DummyModel
+from utils.modeling_roberta import RobertaForMaskedLM
+from utils.xformer import load_base_model
 
 
 class Trainer(BaseTrainer):
@@ -86,17 +84,3 @@ class Trainer(BaseTrainer):
 		
 		if is_rank_0():
 			print(f"[INFO] (epoch={self.epoch}) Saved the model at:", os.path.join(save_at, "PT"))
-
-
-def main():
-	args, logger = get_config()
-	logger = MultiProcessAdapter(logger, {})  # An adapter to assist with logging in multiprocess.
-	
-	trainer = Trainer(args, logger)
-	trainer.train_loop()
-
-
-if __name__ == '__main__':
-	# TODO: My CustomPeft not working deepspeed for some reason. (CVAE/IDPG with similar setup works, LoRA with latest Peft doesn't work either)
-	# $ accelerate launch --config_file config_basic_nofp16.yaml tune_pt_baseline.py
-	main()
