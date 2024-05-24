@@ -53,7 +53,7 @@ class Trainer(BaseTrainer):
 	
 	def init_trackers(self):
 		# Initialize the trackers
-		run_name = self.args.run_name if self.args.run_name is not None else f"GLUE_{self.args.dataset_name}_IDPG"
+		run_name = self.args.run_name if self.args.run_name is not None else f"GLUE/{self.args.dataset_name}/idpg"
 		with self.accelerator.main_process_first():
 			self.accelerator.init_trackers(
 				project_name=self.args.project_name,

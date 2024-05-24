@@ -55,9 +55,8 @@ class BaseTrainer(object):
 		# setup tokenizer
 		logger.info(f"[INFO] Loading Sequence Classifier's tokenizer from {get_huggingface_path(args.model_type)}")
 		self.tokenizer = load_tokenizer(args, args.model_type, args.tokenizer_name)
-		logger.info(f"[INFO] Loading Prompt Generator's tokenizer from {get_huggingface_path(args.lp_gen_model_type)}")
-		self.lp_gen_tokenizer = load_tokenizer(args, args.lp_gen_model_type,
-											   get_huggingface_path(args.lp_gen_model_type))
+		logger.info(f"[INFO] Loading Soft (Latent) Prompt Generator's tokenizer from {get_huggingface_path(args.enc_model_type)}")
+		self.lp_gen_tokenizer = load_tokenizer(args, args.enc_model_type, get_huggingface_path(args.enc_model_type))
 		
 		# prepare glue task
 		self.prepare_glue_task()

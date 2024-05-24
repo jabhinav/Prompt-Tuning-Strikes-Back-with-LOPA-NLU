@@ -30,6 +30,10 @@ def main():
 	elif args.peft_method == 'idpg':
 		from trainers.idpg import Trainer
 		trainer = Trainer(args, logger)
+		
+	elif args.peft_method == 'fft':
+		from trainers.fft import Trainer
+		trainer = Trainer(args, logger)
 	
 	else:
 		raise ValueError(f"PEFT method {args.peft_method} currently not supported.")

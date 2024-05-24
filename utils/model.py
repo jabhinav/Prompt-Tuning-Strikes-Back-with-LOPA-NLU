@@ -10,7 +10,7 @@ from utils.xformer import load_base_model, get_huggingface_path
 
 
 class LatentPromptAttentionGenerator(torch.nn.Module):
-	def __init__(self, args, use_bias=True, freeze_base=False, MLP_h=None):
+	def __init__(self, args, use_bias=True, freeze_base=False, MLP_h=256):
 		super(LatentPromptAttentionGenerator, self).__init__()
 		
 		config, base = load_base_model(
@@ -22,10 +22,10 @@ class LatentPromptAttentionGenerator(torch.nn.Module):
 		self.args = args
 		self.config = config
 		self.base = base  # CodeBERT model
-		self.freeze_base = freeze_base
 		self.rank = self.args.lp_rank
 		
 		# # Base model does not require any training - freeze the weights
+		self.freeze_base = freeze_base
 		if self.freeze_base:
 			for param in self.base.parameters():
 				param.requires_grad = False

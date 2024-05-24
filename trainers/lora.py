@@ -45,7 +45,7 @@ class Trainer(BaseTrainer):
 			self.accelerator.init_trackers(
 				project_name=self.args.project_name,
 				config=vars(self.args),
-				init_kwargs={"wandb": {"name": f"GLUE_{self.args.dataset_name}_lora"}},
+				init_kwargs={"wandb": {"name": f"GLUE/{self.args.dataset_name}/lora"}},
 			)
 	
 	def count_parameters(self):
@@ -76,9 +76,9 @@ class Trainer(BaseTrainer):
 		
 		# Save model
 		model.save_pretrained(
-			save_directory=os.path.join(save_at, "LoRA"),
+			save_directory=os.path.join(save_at, "PEFT"),
 			is_main_process=is_rank_0(),
 		)
 		
 		if is_rank_0():
-			print(f"[INFO] (epoch={self.epoch}) Saved the model at:", os.path.join(save_at, "LoRA"))
+			print(f"[INFO] (epoch={self.epoch}) Saved the model at:", os.path.join(save_at, "PEFT"))

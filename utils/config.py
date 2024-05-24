@@ -5,7 +5,7 @@ import os
 from collections import OrderedDict
 from datetime import datetime
 
-from transformers import SchedulerType, set_seed
+from transformers import set_seed
 from transformers.utils.versions import require_version
 
 from utils.custom import is_rank_0, create_dir, log_dist, set_dist
@@ -47,7 +47,7 @@ def get_config():
 	parser.add_argument("--model_type", type=str, default=model_type)
 	parser.add_argument("--enc_model_type", type=str, default=enc_model_type)
 	parser.add_argument("--lp_rank", type=int, default=4, help="Rank of the decoded row/col vectors.")
-
+	
 	parser.add_argument("--use_fast_tokenizer", default=True,
 						help="Whether to use one of the fast tokenizer (backed by the tokenizers library) or not.", )
 	parser.add_argument("--model_revision", type=str, default="main",
@@ -60,13 +60,13 @@ def get_config():
 						help="Whether or not to enable to load a pretrained model whose head dimensions are different.")
 	
 	# #################################################### Training ################################################# #
-	parser.add_argument("--num_epochs", type=int, default=2, help="Total number of training epochs to perform.")
+	parser.add_argument("--num_epochs", type=int, default=20, help="Total number of training epochs to perform.")
 	# Try 1e-5 for FFT (from RoBERTa paper) and Ours,
 	# 1e-4 for LoRA / PT / IDPG
 	# else choose from 5e−3,1e−3,5e−4,1e−4,5e−5,1e−5
 	parser.add_argument("--lr", type=float, default=1e-5)
 	parser.add_argument("--per_device_train_batch_size", type=int, default=8)
-	parser.add_argument("--per_device_eval_batch_size", type=int, default=8)
+	parser.add_argument("--per_device_eval_batch_size", type=int, default=16)
 	parser.add_argument("--weight_decay", type=float, default=0, help="Weight decay to use.")
 	parser.add_argument("--max_train_steps", type=int, default=None)
 	parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
@@ -106,7 +106,6 @@ def get_config():
 			"execute code present on the Hub on your local machine."
 		),
 	)
-	
 	
 	# #################################################### Hardware ################################################ #
 	parser.add_argument("--load_in_8bit", type=bool, default=False)
@@ -164,7 +163,7 @@ def get_config():
 	
 	if args.push_to_hub:
 		assert args.output_dir is not None, "Need an `output_dir` to create a repo when `--push_to_hub` is passed."
-		
+	
 	# Create a directory to store the logs
 	if args.log_dir is None:
 		current_time = datetime.now().strftime("%Y%m%d-%H%M%S")

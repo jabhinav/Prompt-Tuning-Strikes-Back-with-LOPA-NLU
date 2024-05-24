@@ -47,7 +47,7 @@ class Trainer(BaseTrainer):
 		return seq_cls_config, seq_classifier
 	
 	def init_trackers(self):
-		run_name = self.args.run_name if self.args.run_name is not None else f"GLUE_{self.args.dataset_name}_pt"
+		run_name = self.args.run_name if self.args.run_name is not None else f"GLUE/{self.args.dataset_name}/pt"
 		# Initialize the trackers
 		with self.accelerator.main_process_first():
 			self.accelerator.init_trackers(
@@ -78,9 +78,9 @@ class Trainer(BaseTrainer):
 		
 		# Save model
 		model.seq_classifier.save_pretrained(
-			save_directory=os.path.join(save_at, "PT"),
+			save_directory=os.path.join(save_at, "PEFT"),
 			is_main_process=is_rank_0(),
 		)
 		
 		if is_rank_0():
-			print(f"[INFO] (epoch={self.epoch}) Saved the model at:", os.path.join(save_at, "PT"))
+			print(f"[INFO] (epoch={self.epoch}) Saved the model at:", os.path.join(save_at, "PEFT"))

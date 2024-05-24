@@ -31,7 +31,7 @@ class Trainer(BaseTrainer):
 			self.accelerator.init_trackers(
 				project_name=self.args.project_name,
 				config=vars(self.args),
-				init_kwargs={"wandb": {"name": f"GLUE_{self.args.dataset_name}"}},
+				init_kwargs={"wandb": {"name": f"GLUE/{self.args.dataset_name}/fft"}},
 			)
 	
 	def count_parameters(self):

@@ -52,7 +52,7 @@ class Trainer(BaseTrainer):
 		return seq_cls_config, model
 	
 	def init_trackers(self):
-		run_name = self.args.run_name if self.args.run_name is not None else f"GLUE_{self.args.dataset_name}_CVAE"
+		run_name = self.args.run_name if self.args.run_name is not None else f"GLUE/{self.args.dataset_name}/lopa"
 		# Initialize the trackers
 		with self.accelerator.main_process_first():
 			self.accelerator.init_trackers(
