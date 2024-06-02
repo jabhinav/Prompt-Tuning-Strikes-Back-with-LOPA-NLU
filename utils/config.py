@@ -27,10 +27,10 @@ def get_config():
 	parser = argparse.ArgumentParser(description="Finetune a transformers model on a text classification task")
 	
 	parser.add_argument("--peft_method", type=str, default=None,
-						choices=['lopa', 'pt', 'idpg', 'lora', 'fft'])
+						choices=['lopa', 'pt', 'idpg', 'lora', 'fft', 'dept'])
 	
 	# #################################################### Task #################################################### #
-	parser.add_argument("--dataset_name", type=str, default='mnli', choices=list(processors.keys()))
+	parser.add_argument("--dataset_name", type=str, default=None, choices=list(processors.keys()))
 	parser.add_argument("--data_dir", type=str, default='./glue_data')
 	parser.add_argument("--dataset_path", type=str, default='nyu-mll/glue', choices=['nyu-mll/glue', 'super_glue'])
 	
@@ -60,12 +60,12 @@ def get_config():
 						help="Whether or not to enable to load a pretrained model whose head dimensions are different.")
 	
 	# #################################################### Training ################################################# #
-	parser.add_argument("--num_epochs", type=int, default=20, help="Total number of training epochs to perform.")
+	parser.add_argument("--num_epochs", type=int, default=50, help="Total number of training epochs to perform.")
 	# Try 1e-5 for FFT (from RoBERTa paper) and Ours,
 	# 1e-4 for LoRA / PT / IDPG
 	# else choose from 5e−3,1e−3,5e−4,1e−4,5e−5,1e−5
-	parser.add_argument("--lr", type=float, default=1e-5)
-	parser.add_argument("--per_device_train_batch_size", type=int, default=8)
+	parser.add_argument("--lr", type=float, default=1e-4)
+	parser.add_argument("--per_device_train_batch_size", type=int, default=16)
 	parser.add_argument("--per_device_eval_batch_size", type=int, default=16)
 	parser.add_argument("--weight_decay", type=float, default=0, help="Weight decay to use.")
 	parser.add_argument("--max_train_steps", type=int, default=None)
@@ -82,6 +82,8 @@ def get_config():
 	parser.add_argument("--max_length", type=int, default=256)
 	parser.add_argument("--pad_to_max_length", default=False, help=" Otherwise, dynamic padding is used.")
 	parser.add_argument("--overwrite_cache", type=bool, default=False, help="Overwrite the cached features.")
+	parser.add_argument("--dynamic_pad", type=bool, default=True,
+						help="Whether to use dynamic padding. DEPT cannot use dynamic padding.")
 	
 	# #################################################### Paths #################################################### #
 	parser.add_argument("--cache_dir", type=str, default=None,

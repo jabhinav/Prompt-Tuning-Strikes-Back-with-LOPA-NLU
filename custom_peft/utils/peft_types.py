@@ -27,6 +27,7 @@ class PeftType(str, enum.Enum):
     ADALORA = "ADALORA"
     ADAPTION_PROMPT = "ADAPTION_PROMPT"
     IA3 = "IA3"
+    PROMPT_TUNING_LORA = "PROMPT_TUNING_LORA"  # Custom Added
 
 
 class TaskType(str, enum.Enum):
@@ -34,6 +35,7 @@ class TaskType(str, enum.Enum):
     MASKED_LM = "MASKED_LM"  # Custom Added
     CVAE_MASKED_LM = "CVAE_MASKED_LM"  # Custom Added
     IDPG_MASKED_LM = "IDPG_MASKED_LM"  # Custom Added
+    DEPT_MASKED_LM = "DEPT_MASKED_LM"  # Custom Added
     SEQ_2_SEQ_LM = "SEQ_2_SEQ_LM"
     CAUSAL_LM = "CAUSAL_LM"
     TOKEN_CLS = "TOKEN_CLS"

@@ -33,6 +33,7 @@ from .peft_model import (
 
 from .peft_cvae_model import PeftCvaeModel, PeftCVAEModelForMaskedLM
 from .peft_idpg_baseline_model import PeftIDPGModel, PeftIDPGModelForMaskedLM, PeftIDPGModelForFeatureExtraction
+from .peft_dept_baseline_model import PeftDEPTModel, PeftDEPTModelForMaskedLM
 
 from .tuners import (
     AdaLoraConfig,
@@ -45,6 +46,7 @@ from .tuners import (
     PrefixTuningConfig,
     PromptEncoderConfig,
     PromptTuningConfig,
+    PromptTuningLoRAConfig,
 )
 from .utils import _prepare_prompt_learning_config
 
@@ -58,6 +60,7 @@ MODEL_TYPE_TO_PEFT_MODEL_MAPPING = {
     "MASKED_LM": PeftModelForMaskedLM,  # My custom model
     "CVAE_MASKED_LM": PeftCVAEModelForMaskedLM,  # My custom model
     "IDPG_MASKED_LM": PeftIDPGModelForMaskedLM,  # My custom model
+    "DEPT_MASKED_LM": PeftDEPTModelForMaskedLM,  # My custom model
     "SEQ_2_SEQ_LM": PeftModelForSeq2SeqLM,
     "CAUSAL_LM": PeftModelForCausalLM,
     "TOKEN_CLS": PeftModelForTokenClassification,
@@ -69,6 +72,7 @@ MODEL_TYPE_TO_PEFT_MODEL_MAPPING = {
 PEFT_TYPE_TO_CONFIG_MAPPING = {
     "ADAPTION_PROMPT": AdaptionPromptConfig,
     "PROMPT_TUNING": PromptTuningConfig,
+    "PROMPT_TUNING_LORA": PromptTuningLoRAConfig,  # My custom model
     "PREFIX_TUNING": PrefixTuningConfig,
     "P_TUNING": PromptEncoderConfig,
     "LORA": LoraConfig,

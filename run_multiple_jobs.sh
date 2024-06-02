@@ -1,15 +1,15 @@
 #!/bin/bash
 
-tasks=("mnli" "qqp")  # Add your list of task names here
+tasks=("mnli" "qqp" "rte" "sst2" "mrpc" "qnli")  # Add your list of task names here
 num_virtual_tokens=(10)  # Add your list of num_virtual_tokens here
 
 for task in "${tasks[@]}"; do
     # Iterate over each combination
-    for t_num in "${num_virtual_tokens[@]}"; do
+#    for t_num in "${num_virtual_tokens[@]}"; do
           # # Create a unique directory name
-          log_dir="logging/${task}_t${t_num}"
+          log_dir="logging/GLUE_${task}_dept"
 
-          accelerate launch --config_file config_files/config_basic_nofp16.yaml tune_foundation_model.py --peft_method pt --dataset_name "$task" --num_virtual_tokens "$t_num" --run_name "GLUE/${task}/pt_t${t_num}" --log_dir "$log_dir"
+          accelerate launch --config_file config_files/config_basic_nofp16.yaml tune_foundation_model.py --peft_method dept --dataset_name "$task" --log_dir "$log_dir"
 
 #          # Remove the log file
 #          rm -r "$log_dir"
@@ -19,5 +19,5 @@ for task in "${tasks[@]}"; do
 #          # Remove the log file
 #          rm -r "$log_dir"
 
-    done
+#    done
 done

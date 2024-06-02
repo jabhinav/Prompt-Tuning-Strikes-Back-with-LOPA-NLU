@@ -57,6 +57,11 @@ from .peft_idpg_baseline_model import (
     PeftIDPGModelForFeatureExtraction
 )
 
+from .peft_dept_baseline_model import (
+    PeftDEPTModel,
+    PeftDEPTModelForMaskedLM,
+)
+
 from .tuners import (
     AdaptionPromptConfig,
     AdaptionPromptModel,
@@ -74,6 +79,8 @@ from .tuners import (
     PromptEncoderReparameterizationType,
     PromptTuningConfig,
     PromptTuningInit,
+    PromptEmbeddingLoRA,  # My custom
+    PromptTuningLoRAConfig  # My custom
 )
 from .utils import (
     TRANSFORMERS_MODELS_TO_PREFIX_TUNING_POSTPROCESS_MAPPING,

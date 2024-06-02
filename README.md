@@ -10,10 +10,15 @@ Here, the code for the NLU tasks are provided, rest of the instructions are same
 ### Arguments
 
 - `--peft_method`: Specifies the PEFT method to be used.
-  - Possible values: `lora`, `pt`, `idpg`, `lopa`, `fft`
+  - Possible values: `lora`, `pt`, `idpg`, `lopa`, `fft`, `dept`
 
 - `--dataset_name`: Name of the task to be trained on.
   - Possible values: `mnli`, `sst2`, `qqp`, `qnli`, `rte`, `mrpc`
+
+- `--dynamic_pad`: Whether to use dynamic padding or not.
+  - Possible values: `True`, `False`
+  - Default: `True`. 
+  - Note: `dept` method does not support dynamic padding. Set this to `False` when using `dept`.
 
 ## Evaluating and Getting Results
 

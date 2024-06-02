@@ -171,10 +171,12 @@ class BaseTrainer(object):
 			)
 	
 	def get_data(self):
-		train_dataset = PromptDataset(self.args, self.args.dataset_name, self.tokenizer, self.lp_gen_tokenizer,
-									  data_type='train')
-		eval_dataset = PromptDataset(self.args, self.args.dataset_name, self.tokenizer, self.lp_gen_tokenizer,
-									 data_type='dev')
+		train_dataset = PromptDataset(
+			self.args, self.args.dataset_name, self.tokenizer, self.lp_gen_tokenizer, data_type='train', dynamic_pad=self.args.dynamic_pad
+		)
+		eval_dataset = PromptDataset(
+			self.args, self.args.dataset_name, self.tokenizer, self.lp_gen_tokenizer, data_type='dev', dynamic_pad=self.args.dynamic_pad
+		)
 		return train_dataset, eval_dataset
 	
 	def _build_dataloader(self):

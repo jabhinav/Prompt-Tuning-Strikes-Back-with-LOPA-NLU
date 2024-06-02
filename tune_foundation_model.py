@@ -34,6 +34,10 @@ def main():
 	elif args.peft_method == 'fft':
 		from trainers.fft import Trainer
 		trainer = Trainer(args, logger)
+		
+	elif args.peft_method == 'dept':
+		from trainers.dept import Trainer
+		trainer = Trainer(args, logger)
 	
 	else:
 		raise ValueError(f"PEFT method {args.peft_method} currently not supported.")
@@ -44,6 +48,6 @@ def main():
 if __name__ == '__main__':
 	# To run with accelerate,
 	# $ accelerate launch --config_file config_files/config_ds_zero_stage2_no_fp16.yaml tune_foundation_model.py
-	# My CustomPeft not working deepspeed for some reason. (CVAE/IDPG with similar setup works, LoRA, PT with latest Peft doesn't work either)
+	# My CustomPeft not working with deepspeed for some reason. (CVAE/IDPG with similar setup works, LoRA, PT with latest Peft doesn't work either)
 	# $ accelerate launch --config_file config_files/config_basic_nofp16.yaml tune_foundation_model.py
 	main()

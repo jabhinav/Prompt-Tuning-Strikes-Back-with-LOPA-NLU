@@ -219,13 +219,14 @@ def load_labels(raw_datasets, args):
 
 
 class PromptDataset_wEnc(Dataset):
-	def __init__(self, args, task, tokenizer, enc_tokenizer, data_type="train"):
+	def __init__(self, args, task, tokenizer, enc_tokenizer, data_type="train", dynamic_pad=True):
 		
 		self.args = args
 		self.task = task
 		self.tokenizer = tokenizer
 		self.enc_tokenizer = enc_tokenizer
 		self.data_type = data_type
+		self.dynamic_pad = dynamic_pad
 		
 		# Get the features for the classifier model
 		features = self.convert_to_features(
@@ -300,10 +301,10 @@ class PromptDataset_wEnc(Dataset):
 		batch_enc_token_type_ids = []
 		
 		all_length = [len(item['input_ids']) for item in batch_data]
-		max_len = max(all_length)
+		max_len = max(all_length) if self.dynamic_pad else self.args.max_length
 		
 		all_enc_length = [len(item['enc_input_ids']) for item in batch_data]
-		max_enc_len = max(all_enc_length)
+		max_enc_len = max(all_enc_length) if self.dynamic_pad else self.args.max_length
 
 		for i, item in enumerate(batch_data):
 			
