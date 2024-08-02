@@ -73,13 +73,18 @@ class RobertaForMaskedLM(RobertaPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        mask_pos=None,
+        mask_pos=None,  # My custom
+        past_key_values=None,  # My custom
     ):
         r"""
         labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size, sequence_length)`, `optional`):
             Labels for computing the masked language modeling loss. Indices should be in ``[-100, 0, ...,
             config.vocab_size]`` (see ``input_ids`` docstring) Tokens with indices set to ``-100`` are ignored
             (masked), the loss is only computed for the tokens with labels in ``[0, ..., config.vocab_size]``
+        past_key_values (:obj:`Tuple[Tuple[torch.Tensor]]`, `optional`, returned by ``self.roberta``):
+            Tuple of :obj:`Tuple` where each tuple has 4 tensors of shape :obj:`(batch_size, num_heads,
+            sequence_length, embed_size_per_head)` This contains pre-computed hidden-states (key and value tensors).
+            [I AM USING THIS DURING PREFIX TUNING]
         kwargs (:obj:`Dict[str, any]`, optional, defaults to `{}`):
             Used to hide legacy arguments that have been deprecated.
         """
@@ -97,6 +102,7 @@ class RobertaForMaskedLM(RobertaPreTrainedModel):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
+            past_key_values=past_key_values,
         )
         
         sequence_output = outputs[0]

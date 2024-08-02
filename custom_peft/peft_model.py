@@ -33,7 +33,7 @@ from huggingface_hub import ModelCard, ModelCardData, hf_hub_download
 from safetensors.torch import save_file as safe_save_file
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 from transformers import PreTrainedModel
-from transformers.modeling_outputs import QuestionAnsweringModelOutput, SequenceClassifierOutput, TokenClassifierOutput
+from transformers.modeling_outputs import QuestionAnsweringModelOutput, SequenceClassifierOutput, TokenClassifierOutput, MaskedLMOutput
 from transformers.utils import PushToHubMixin
 
 from . import __version__
@@ -1969,21 +1969,32 @@ class PeftModelForMaskedLM(PeftModel):
 			}
 		)
 		
-		if kwargs.get("token_type_ids", None) is not None:
-			kwargs["token_type_ids"] = torch.cat(
-				(
-					torch.zeros(batch_size, peft_config.num_virtual_tokens).to(self.word_embeddings.weight.device),
-					kwargs["token_type_ids"],
-				),
-				dim=1,
-			).long()
-		if inputs_embeds is None:
-			inputs_embeds = self.word_embeddings(input_ids)
-		prompts = self.get_prompt(batch_size=batch_size)
-		prompts = prompts.to(inputs_embeds.dtype)
+		if peft_config.peft_type == PeftType.PREFIX_TUNING:
+			# Check if model supports past_key_values
+			fwd_params = list(inspect.signature(self.base_model.forward).parameters.keys())
+			if "past_key_values" not in fwd_params:
+				transformer_name = self.base_model._get_name()
+				# TODO: In this case, look implementation of _prefix_tuning_forward
+				raise ValueError("Current Model {} does not support past_key_values".format(transformer_name))
+			past_key_values = self.get_prompt(batch_size)
+			return self.base_model(input_ids=input_ids, past_key_values=past_key_values, **kwargs)
 		
-		inputs_embeds = torch.cat((prompts, inputs_embeds), dim=1)
-		return self.base_model(inputs_embeds=inputs_embeds, **kwargs)
+		else:
+			if kwargs.get("token_type_ids", None) is not None:
+				kwargs["token_type_ids"] = torch.cat(
+					(
+						torch.zeros(batch_size, peft_config.num_virtual_tokens).to(self.word_embeddings.weight.device),
+						kwargs["token_type_ids"],
+					),
+					dim=1,
+				).long()
+			if inputs_embeds is None:
+				inputs_embeds = self.word_embeddings(input_ids)
+			prompts = self.get_prompt(batch_size=batch_size)
+			prompts = prompts.to(inputs_embeds.dtype)
+			
+			inputs_embeds = torch.cat((prompts, inputs_embeds), dim=1)
+			return self.base_model(inputs_embeds=inputs_embeds, **kwargs)
 	
 	def get_nb_trainable_parameters(self):
 		r"""
@@ -1991,3 +2002,4 @@ class PeftModelForMaskedLM(PeftModel):
 		"""
 		trainable_params, all_param = super().get_nb_trainable_parameters()
 		return trainable_params, all_param
+	

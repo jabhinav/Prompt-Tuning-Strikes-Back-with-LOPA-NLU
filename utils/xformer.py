@@ -91,7 +91,7 @@ def load_base_model(args, model_type, model_name_or_path, config_class=None, mod
 	# With the config we initialize the model to do classification for config.num_labels (used by model's RobertaClassificationHead)
 	config = config_class.from_pretrained(
 		model_name_or_path,  # [Note] Not using config_name since it is the same as model_name_or_path
-		num_labels=args.num_labels,  # [Note] Unless we load a ModelForSequenceClassification, this is not used
+		# num_labels=args.num_labels,  # [Note] Unless we load a ModelForSequenceClassification, this is not used
 		finetuning_task="text-classification",
 		cache_dir=args.cache_dir,
 		revision=args.model_revision,

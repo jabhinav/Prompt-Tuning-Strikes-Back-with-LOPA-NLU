@@ -26,6 +26,10 @@ def main():
 	elif args.peft_method == 'pt':
 		from trainers.pt import Trainer
 		trainer = Trainer(args, logger)
+		
+	elif args.peft_method == 'prefix':
+		from trainers.prefix import Trainer
+		trainer = Trainer(args, logger)
 	
 	elif args.peft_method == 'idpg':
 		from trainers.idpg import Trainer

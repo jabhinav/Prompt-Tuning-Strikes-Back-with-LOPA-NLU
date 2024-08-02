@@ -26,11 +26,11 @@ def get_config():
 	
 	parser = argparse.ArgumentParser(description="Finetune a transformers model on a text classification task")
 	
-	parser.add_argument("--peft_method", type=str, default=None,
-						choices=['lopa', 'pt', 'idpg', 'lora', 'fft', 'dept'])
+	parser.add_argument("--peft_method", type=str, default='prefix',
+						choices=['lopa', 'pt', 'idpg', 'lora', 'fft', 'dept', 'prefix'])
 	
 	# #################################################### Task #################################################### #
-	parser.add_argument("--dataset_name", type=str, default=None, choices=list(processors.keys()))
+	parser.add_argument("--dataset_name", type=str, default='rte', choices=list(processors.keys()))
 	parser.add_argument("--data_dir", type=str, default='./glue_data')
 	parser.add_argument("--dataset_path", type=str, default='nyu-mll/glue', choices=['nyu-mll/glue', 'super_glue'])
 	
@@ -48,6 +48,10 @@ def get_config():
 	parser.add_argument("--enc_model_type", type=str, default=enc_model_type)
 	parser.add_argument("--lp_rank", type=int, default=4, help="Rank of the decoded row/col vectors.")
 	
+	# For PHM - Currently only used by IDPG
+	parser.add_argument("--use_phm_layers", type=bool, default=False)
+	parser.add_argument("--phm_n", type=int, default=16, help="hyper-param n in kronecker product")
+	
 	parser.add_argument("--use_fast_tokenizer", default=True,
 						help="Whether to use one of the fast tokenizer (backed by the tokenizers library) or not.", )
 	parser.add_argument("--model_revision", type=str, default="main",
@@ -60,13 +64,14 @@ def get_config():
 						help="Whether or not to enable to load a pretrained model whose head dimensions are different.")
 	
 	# #################################################### Training ################################################# #
-	parser.add_argument("--num_epochs", type=int, default=50, help="Total number of training epochs to perform.")
+	parser.add_argument("--num_epochs", type=int, default=20, help="Total number of training epochs to perform.")
 	# Try 1e-5 for FFT (from RoBERTa paper) and Ours,
 	# 1e-4 for LoRA / PT / IDPG
+	# 5e−5 for PrefixTuning
 	# else choose from 5e−3,1e−3,5e−4,1e−4,5e−5,1e−5
 	parser.add_argument("--lr", type=float, default=1e-4)
-	parser.add_argument("--per_device_train_batch_size", type=int, default=16)
-	parser.add_argument("--per_device_eval_batch_size", type=int, default=16)
+	parser.add_argument("--per_device_train_batch_size", type=int, default=8)
+	parser.add_argument("--per_device_eval_batch_size", type=int, default=8)
 	parser.add_argument("--weight_decay", type=float, default=0, help="Weight decay to use.")
 	parser.add_argument("--max_train_steps", type=int, default=None)
 	parser.add_argument("--gradient_accumulation_steps", type=int, default=1)

@@ -903,7 +903,10 @@ class PeftCVAEModelForMaskedLM(PeftCvaeModel):
 		# For shared prompts across instances
 		prompts = prompts * latent_prompt_att_weights
 		
-		# For no sharing
+		# For additive approach [For simply an ablation study]
+		# prompts = prompts + latent_prompt_att_weights
+		
+		# For no sharing [For simply an ablation study]
 		# prompts = latent_attention_weights
 		
 		inputs_embeds = torch.cat((prompts, inputs_embeds), dim=1)

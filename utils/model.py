@@ -1,5 +1,6 @@
 from typing import Optional
 
+import math
 import torch
 import torch.nn as nn
 from torch.nn import MSELoss, CrossEntropyLoss, BCEWithLogitsLoss
@@ -7,10 +8,14 @@ from transformers.modeling_outputs import SequenceClassifierOutput
 
 from custom_peft import PeftIDPGModelForMaskedLM, PeftModelForMaskedLM, PeftCVAEModelForMaskedLM
 from utils.xformer import load_base_model, get_huggingface_path
+from torch.nn.parameter import Parameter
+from torch import Tensor
+from torch.nn import init
+from torch.nn import functional as F
 
 
 class LatentPromptAttentionGenerator(torch.nn.Module):
-	def __init__(self, args, use_bias=True, freeze_base=False, MLP_h=256):
+	def __init__(self, args, use_bias=True, freeze_base=True, MLP_h=256):
 		super(LatentPromptAttentionGenerator, self).__init__()
 		
 		config, base = load_base_model(
@@ -210,6 +215,136 @@ class IDPGSoftPromptGenerator(torch.nn.Module):
 		soft_prompt_embedding = soft_prompt_embedding.view(-1, self.config.n_virtual_tokens,
 														   self.config.word_embedding_dim)
 		return soft_prompt_embedding
+	
+	def __str__(self):
+		return f"IDPG/{self.args.enc_model_type}"
+	
+	def __repr__(self):
+		return f"IDPG/{self.args.enc_model_type}"
+
+
+class PHMLayer(nn.Module):
+	
+	def __init__(self, n, in_features, out_features):
+		super(PHMLayer, self).__init__()
+		
+		assert out_features % n == 0, "out_features should be divisible by n"
+		assert in_features % n == 0, "in_features should be divisible by n"
+		
+		self.n = n
+		self.in_features = in_features
+		self.out_features = out_features
+		
+		self.bias = Parameter(torch.Tensor(out_features))
+		
+		self.a = Parameter(torch.nn.init.xavier_uniform_(torch.zeros((n, n, n))))
+		
+		self.s = Parameter(
+			torch.nn.init.xavier_uniform_(torch.zeros((n, self.out_features // n, self.in_features // n))))
+		
+		self.weight = torch.zeros((self.out_features, self.in_features))
+		
+		fan_in, _ = init._calculate_fan_in_and_fan_out(self.weight)
+		bound = 1 / math.sqrt(fan_in)
+		init.uniform_(self.bias, -bound, bound)
+	
+	def kronecker_product1(self, a, b):  # adapted from Bayer Research's implementation
+		siz1 = torch.Size(torch.tensor(a.shape[-2:]) * torch.tensor(b.shape[-2:]))
+		res = a.unsqueeze(-1).unsqueeze(-3) * b.unsqueeze(-2).unsqueeze(-4)
+		siz0 = res.shape[:-4]
+		out = res.reshape(siz0 + siz1)
+		return out
+	
+	def forward(self, input: Tensor) -> Tensor:
+		self.weight = torch.sum(self.kronecker_product1(self.a, self.s), dim=0)
+		input = input.type(dtype=self.weight.type())
+		return F.linear(input, weight=self.weight, bias=self.bias)
+	
+	def extra_repr(self) -> str:
+		return 'in_features={}, out_features={}, bias={}'.format(
+			self.in_features, self.out_features, self.bias is not None)
+	
+	def reset_parameters(self) -> None:
+		init.kaiming_uniform_(self.a, a=math.sqrt(5))
+		init.kaiming_uniform_(self.s, a=math.sqrt(5))
+		fan_in, _ = init._calculate_fan_in_and_fan_out(self.placeholder)
+		bound = 1 / math.sqrt(fan_in)
+		init.uniform_(self.bias, -bound, bound)
+
+
+class IDPGSoftPromptGenerator_wPHM(torch.nn.Module):
+	def __init__(self, args, use_bias=True, MLP_h=256, n=16):
+		super(IDPGSoftPromptGenerator_wPHM, self).__init__()
+		
+		config, base = load_base_model(
+			args,
+			model_type=args.enc_model_type,
+			model_name_or_path=get_huggingface_path(args.enc_model_type)
+		)
+		
+		self.args = args
+		self.config = config
+		self.base = base
+		
+		# Base model does not require any training - freeze the weights
+		for param in self.base.parameters():
+			param.requires_grad = False
+		
+		# For each virtual token, predict the embedding
+		self.config.n_virtual_tokens = self.args.total_virtual_tokens
+		self.config.word_embedding_dim = self.args.word_embedding_dim
+		
+		# Set params [Should be same as the model used for the base]
+		dropout_prob = config.hidden_dropout_prob if hasattr(config,
+															 'hidden_dropout_prob') else config.dropout_rate if hasattr(
+			config, 'dropout_rate') else 0.1
+		hidden_dim = config.hidden_size if hasattr(config, 'hidden_size') else config.embed_dim if hasattr(config,
+																										   'embed_dim') else 768
+		self.config_initializer_range = config.initializer_range if hasattr(config, 'initializer_range') else 0.02
+		
+		if MLP_h is None:
+			MLP_h = hidden_dim
+		
+		# Define the head for encoding all virtual tokens
+		self._dropout = torch.nn.Dropout(dropout_prob)
+		self.layer_down_project = PHMLayer(in_features=hidden_dim, out_features=MLP_h, n=n)
+		self.layer_up_project = PHMLayer(in_features=MLP_h, out_features=self.config.n_virtual_tokens * self.config.word_embedding_dim, n=n)
+	
+	@torch.no_grad()
+	def get_instance_embedding(self, input_ids, attention_mask=None, token_type_ids=None):
+		if attention_mask is None:
+			# Attend to all tokens
+			attention_mask = torch.ones_like(input_ids)
+			attention_mask = attention_mask.to(device=input_ids.device)
+		
+		# Get the CLS token embedding
+		if self.args.enc_model_type == 'roberta-large':
+			x = self.base(
+				input_ids,
+				attention_mask=attention_mask,
+				token_type_ids=token_type_ids
+			)
+			x = x[0]
+			x = x[:, 0, :]  # take <s> which is the first token as seq. representation (equiv. to [CLS])
+		else:
+			raise NotImplementedError
+		return x.detach()
+	
+	def forward(self, input_ids, attention_mask=None, token_type_ids=None):
+		
+		inst_embedding = self.get_instance_embedding(input_ids, attention_mask, token_type_ids)
+		
+		# Predict the row weights
+		soft_prompt_embedding = self._dropout(inst_embedding)
+		soft_prompt_embedding = self.layer_down_project(soft_prompt_embedding)
+		soft_prompt_embedding = torch.nn.functional.tanh(soft_prompt_embedding)
+		soft_prompt_embedding = self.layer_up_project(soft_prompt_embedding)
+		
+		# Reshape [B, N * D] -> [B, N, D]
+		soft_prompt_embedding = soft_prompt_embedding.view(-1, self.config.n_virtual_tokens,
+														   self.config.word_embedding_dim)
+		return soft_prompt_embedding
+		
 	
 	def __str__(self):
 		return f"IDPG/{self.args.enc_model_type}"

@@ -1,5 +1,7 @@
+import json
 import logging
 import os
+import random
 from typing import List
 
 import torch
@@ -51,7 +53,7 @@ def get_label_list(raw_dataset, split="train") -> List[str]:
 		if label == '-1':
 			logger.warning("Label -1 found in label list, removing it.")
 			label_list.remove(label)
-			
+	
 	label_list.sort()
 	return label_list
 
@@ -173,7 +175,6 @@ def cast_regression_labels(raw_datasets):
 
 
 def load_labels(raw_datasets, args):
-	
 	is_multi_label = False
 	if args.dataset_name is not None:
 		is_regression = args.dataset_name == "stsb"
@@ -255,7 +256,6 @@ class PromptDataset_wEnc(Dataset):
 		self.all_enc_input_ids = [f.input_ids for f in enc_features]
 		self.all_enc_attention_mask = [f.attention_mask for f in enc_features]
 		self.all_enc_token_type_ids = [f.token_type_ids for f in enc_features]
-
 	
 	def __len__(self):
 		return len(self.all_input_ids)
@@ -305,7 +305,7 @@ class PromptDataset_wEnc(Dataset):
 		
 		all_enc_length = [len(item['enc_input_ids']) for item in batch_data]
 		max_enc_len = max(all_enc_length) if self.dynamic_pad else self.args.max_length
-
+		
 		for i, item in enumerate(batch_data):
 			
 			# # Latent Prompt Generator/Encoder model
@@ -340,8 +340,7 @@ class PromptDataset_wEnc(Dataset):
 			if self.all_labels is not None:
 				label = item['label']
 				batch_labels.append(label)
-				
-			
+		
 		batch_enc_input_ids = torch.tensor(batch_enc_input_ids, dtype=torch.long)
 		batch_enc_attention_mask = torch.tensor(batch_enc_attention_mask, dtype=torch.long)
 		batch_enc_token_type_ids = torch.tensor(batch_enc_token_type_ids, dtype=torch.long)
