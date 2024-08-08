@@ -15,7 +15,7 @@ class Trainer(BaseTrainer):
 		super(Trainer, self).__init__(args, logger)
 	
 	def _build_model(self):
-		# Load the Base model + Classification Head
+		# Load the Base model
 		config, model = load_base_model(
 			self.args,
 			model_type=self.args.model_type,

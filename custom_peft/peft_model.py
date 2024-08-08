@@ -1974,7 +1974,6 @@ class PeftModelForMaskedLM(PeftModel):
 			fwd_params = list(inspect.signature(self.base_model.forward).parameters.keys())
 			if "past_key_values" not in fwd_params:
 				transformer_name = self.base_model._get_name()
-				# TODO: In this case, look implementation of _prefix_tuning_forward
 				raise ValueError("Current Model {} does not support past_key_values".format(transformer_name))
 			past_key_values = self.get_prompt(batch_size)
 			return self.base_model(input_ids=input_ids, past_key_values=past_key_values, **kwargs)

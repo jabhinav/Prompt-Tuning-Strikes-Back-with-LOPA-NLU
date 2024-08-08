@@ -379,6 +379,9 @@ class BaseTrainer(object):
 			label_id = self.tokenizer(' ' + v, add_special_tokens=False)['input_ids']
 			assert len(label_id) == 1
 			label_ids.append(label_id[0])
+		
+		if self.accelerator.is_main_process:
+			print("[DEBUG] Label IDs: ", label_ids)
 		return label_ids
 	
 	def _eval_epoch(self, dataloader):
@@ -399,6 +402,7 @@ class BaseTrainer(object):
 			with torch.no_grad():
 				outputs = self.forward(batch)
 				logits = outputs.logits
+				breakpoint()
 				# Logits for label ids
 				logits = logits[:, self.label_ids]
 			

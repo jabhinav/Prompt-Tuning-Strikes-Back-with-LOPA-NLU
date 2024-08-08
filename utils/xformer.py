@@ -18,6 +18,7 @@ MODEL_CLASSES = {
 	't5': (T5Config, T5ForConditionalGeneration),
 	'bart': (BartConfig, BartForConditionalGeneration),
 	'gpt2': (GPT2Config, GPT2LMHeadModel),
+	'gpt2-medium': (GPT2Config, GPT2LMHeadModel),
 	'gpt2-large': (GPT2Config, GPT2LMHeadModel),
 	'gpt2-xl': (GPT2Config, GPT2LMHeadModel),
 	'gpt-neo-125M': (GPTNeoConfig, GPTNeoForCausalLM),
@@ -33,6 +34,8 @@ TOKENIZER_CLASSES = {
 	't5': T5Tokenizer,
 	'bart': BartTokenizer,
 	'gpt2': GPT2Tokenizer,
+	'gpt2-medium': GPT2Tokenizer,
+	'gpt2-large': GPT2Tokenizer,
 	'gpt2-xl': GPT2Tokenizer,
 	'gpt-neo-125M': GPT2Tokenizer,
 	'gpt-neo-1.3B': GPT2Tokenizer,
@@ -134,10 +137,12 @@ def get_huggingface_path(model: str) -> str:
 	# ############################# OpenAI GPT Models ############################# #
 	elif model == 'gpt2':  # gpt2 (124M)
 		huggingface_path = 'gpt2'
-	elif model == 'gpt2-large':  # gpt2-medium(335M), gpt2-large (774M)
+	elif model == 'gpt2-medium':  # gpt2-medium (345M)
+		huggingface_path = 'gpt2-medium'
+	elif model == 'gpt2-large':  # gpt2-large (774M)
 		huggingface_path = 'gpt2-large'
-	elif model == 'gpt2-xl':
-		huggingface_path = 'gpt2-xl'  # gpt2-xl (1.5B)
+	elif model == 'gpt2-xl':   # gpt2-xl (1.5B)
+		huggingface_path = 'gpt2-xl'
 	elif model == 'gpt-neo-125M':
 		huggingface_path = 'EleutherAI/gpt-neo-125M'
 	elif model == 'gpt-neo-1.3B':

@@ -16,7 +16,7 @@ class Trainer(BaseTrainer):
 		super(Trainer, self).__init__(args, logger)
 	
 	def _build_model(self):
-		# Load the Base model + Classification Head
+		# Load the Base model
 		seq_cls_config, seq_classifier = load_base_model(
 			self.args,
 			model_type=self.args.model_type,
@@ -29,6 +29,9 @@ class Trainer(BaseTrainer):
 		pt_config = PrefixTuningConfig(
 			task_type=TaskType.MASKED_LM,
 			num_virtual_tokens=self.args.num_virtual_tokens,
+			# To do prefix-tuning, set the following to True. For p-tuningV2 set it to False
+			# prefix_projection=True,  # Use MLP re-parametrization to generate prefix embeddings? Use False to directly initialize the embeddings
+			# encoder_hidden_size=512,  # If None, Default is FMs hidden size
 		)
 		
 		# Initialize the model adapters

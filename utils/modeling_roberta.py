@@ -105,8 +105,8 @@ class RobertaForMaskedLM(RobertaPreTrainedModel):
             past_key_values=past_key_values,
         )
         
-        sequence_output = outputs[0]
-        # Get the masked token embeddings [This is what is different from default RobertaForMaskedLM]
+        sequence_output = outputs[0]  # Get the embeddings for all tokens
+        # Get the masked token embeddings, not all tokens [This is what is different from default RobertaForMaskedLM]
         sequence_mask_output = sequence_output[torch.arange(sequence_output.size(0)), mask_pos]
         prediction_scores = self.lm_head(sequence_mask_output)
 

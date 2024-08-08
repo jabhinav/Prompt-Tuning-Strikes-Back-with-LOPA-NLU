@@ -26,16 +26,16 @@ def get_config():
 	
 	parser = argparse.ArgumentParser(description="Finetune a transformers model on a text classification task")
 	
-	parser.add_argument("--peft_method", type=str, default='prefix',
+	parser.add_argument("--peft_method", type=str, default=None,
 						choices=['lopa', 'pt', 'idpg', 'lora', 'fft', 'dept', 'prefix'])
 	
 	# #################################################### Task #################################################### #
-	parser.add_argument("--dataset_name", type=str, default='rte', choices=list(processors.keys()))
+	parser.add_argument("--dataset_name", type=str, default=None, choices=list(processors.keys()))
 	parser.add_argument("--data_dir", type=str, default='./glue_data')
 	parser.add_argument("--dataset_path", type=str, default='nyu-mll/glue', choices=['nyu-mll/glue', 'super_glue'])
 	
 	# #################################################### Wandb #################################################### #
-	parser.add_argument('--wandb_logging', type=bool, default=False)
+	parser.add_argument('--wandb_logging', action='store_true', help="Log to wandb")
 	parser.add_argument('--project_name', type=str, default='NLU')
 	parser.add_argument('--run_name', type=str, default=None)
 	
@@ -46,11 +46,14 @@ def get_config():
 	# #################################################### Model #################################################### #
 	parser.add_argument("--model_type", type=str, default=model_type)
 	parser.add_argument("--enc_model_type", type=str, default=enc_model_type)
+	
+	# For LOPA
 	parser.add_argument("--lp_rank", type=int, default=4, help="Rank of the decoded row/col vectors.")
 	
 	# For PHM - Currently only used by IDPG
-	parser.add_argument("--use_phm_layers", type=bool, default=False)
-	parser.add_argument("--phm_n", type=int, default=16, help="hyper-param n in kronecker product")
+	parser.add_argument("--use_phm_layers", type=bool, default=True)
+	parser.add_argument("--phm_n", type=int, default=None, help="hyper-param n in kronecker product",
+						choices=[8, 16, 32])
 	
 	parser.add_argument("--use_fast_tokenizer", default=True,
 						help="Whether to use one of the fast tokenizer (backed by the tokenizers library) or not.", )

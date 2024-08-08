@@ -3,6 +3,11 @@ from accelerate.logging import MultiProcessAdapter
 from utils.config import get_config
 from utils.custom import is_rank_0
 
+import os
+
+# Set the os environment
+os.environ['PYTHONBREAKPOINT'] = '0'  # completely disable breakpoint()
+
 
 def main():
 	args, logger = get_config()
