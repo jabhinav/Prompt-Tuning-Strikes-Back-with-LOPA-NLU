@@ -402,10 +402,10 @@ class BaseTrainer(object):
 			with torch.no_grad():
 				outputs = self.forward(batch)
 				logits = outputs.logits
-				breakpoint()
+				# breakpoint()
 				# Logits for label ids
 				logits = logits[:, self.label_ids]
-			
+
 			logits, references = self.accelerator.gather((logits, batch["labels"]))
 			
 			# Update the label ids in the references to 0, 1, ...

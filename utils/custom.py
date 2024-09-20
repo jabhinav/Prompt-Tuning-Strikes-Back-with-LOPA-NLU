@@ -39,9 +39,15 @@ def log_dist(
 def set_dist(args):
 	# To train on cpu, set args.no_cuda=True else it will use all available gpus [Recommended use for now]
 	if args.local_rank == -1 or args.no_cuda:
-		device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
-		args.n_gpu = torch.cuda.device_count()
-	
+		if torch.cuda.is_available():
+			device = torch.device("cuda")
+			args.n_gpu = torch.cuda.device_count()
+		elif torch.backends.mps.is_available():
+			device = torch.device("mps")
+			args.n_gpu = 1
+		else:
+			device = torch.device("cpu")
+			args.n_gpu = 0
 	# To enable distributed training (does it mean multi-node?), set local_rank
 	else:
 		torch.cuda.set_device(args.local_rank)

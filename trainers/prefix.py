@@ -26,13 +26,19 @@ class Trainer(BaseTrainer):
 		)
 		
 		# Get the config
-		pt_config = PrefixTuningConfig(
-			task_type=TaskType.MASKED_LM,
-			num_virtual_tokens=self.args.num_virtual_tokens,
-			# To do prefix-tuning, set the following to True. For p-tuningV2 set it to False
-			# prefix_projection=True,  # Use MLP re-parametrization to generate prefix embeddings? Use False to directly initialize the embeddings
-			# encoder_hidden_size=512,  # If None, Default is FMs hidden size
-		)
+		if self.args.peft_method == 'prefix'
+			pt_config = PrefixTuningConfig(
+				task_type=TaskType.MASKED_LM,
+				num_virtual_tokens=self.args.num_virtual_tokens,
+				# To do prefix-tuning, set the following to True. For p-tuningV2 set it to False
+				prefix_projection=True,  # Use MLP re-parametrization to generate prefix embeddings? Use False to directly initialize the embeddings
+				encoder_hidden_size=512,  # If None, Default is FMs hidden size
+			)
+		elif self.args.peft_method == 'ptuningv2':
+			pt_config = PrefixTuningConfig(
+				task_type=TaskType.MASKED_LM,
+				num_virtual_tokens=self.args.num_virtual_tokens,
+			)
 		
 		# Initialize the model adapters
 		seq_classifier = get_peft_model(seq_classifier, pt_config)
@@ -49,7 +55,7 @@ class Trainer(BaseTrainer):
 		return seq_cls_config, seq_classifier
 	
 	def init_trackers(self):
-		run_name = self.args.run_name if self.args.run_name is not None else f"GLUE/{self.args.dataset_name}/prefix"
+		run_name = self.args.run_name if self.args.run_name is not None else f"GLUE/{self.args.dataset_name}/{self.args.peft_method}"
 		# Initialize the trackers
 		with self.accelerator.main_process_first():
 			self.accelerator.init_trackers(
