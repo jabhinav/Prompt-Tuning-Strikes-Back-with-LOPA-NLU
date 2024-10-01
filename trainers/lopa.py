@@ -6,7 +6,7 @@ from transformers import RobertaConfig
 from custom_peft import PromptTuningConfig, TaskType, PromptTuningInit, get_peft_model
 from trainers.base import BaseTrainer
 from utils.custom import is_rank_0
-from utils.model import LOPA, LatentPromptAttentionGenerator
+from utils.model import LOPA, LatentPromptAttentionGenerator as EmbeddingEncoder
 from utils.modeling_roberta import RobertaForMaskedLM
 from utils.xformer import load_base_model
 
@@ -43,7 +43,7 @@ class Trainer(BaseTrainer):
 		# 			'lm_head.decoder.weight' since LM Head is present is RobertaForCausalLM
 		# # Note 2: Also, RobertaModel by default has add_pooling_layer=True which adds a pooling layer on top of the encoder.
 		# 			Since ckpt does not have it, it will be init and throw a msg. It is fine since we are not using it.
-		inst_specific_soft_prompt_gen = LatentPromptAttentionGenerator(self.args)
+		inst_specific_soft_prompt_gen = EmbeddingEncoder(self.args)
 		
 		self.logger.info("Building the Instance-Specific Soft Prompt Generator done.")
 		

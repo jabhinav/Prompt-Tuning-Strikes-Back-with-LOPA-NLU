@@ -18,7 +18,7 @@ class LatentPromptAttentionGenerator(torch.nn.Module):
 	"""
 	Used in LOPA to generate the instance-specific attention weights, Z_I before the gating function.
 	"""
-	def __init__(self, args, use_bias=True, freeze_base=True, MLP_h=256):
+	def __init__(self, args, use_bias=True, freeze_base=False, MLP_h=256):
 		super(LatentPromptAttentionGenerator, self).__init__()
 		
 		config, base = load_base_model(

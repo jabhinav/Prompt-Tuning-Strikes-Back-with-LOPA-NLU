@@ -6,7 +6,7 @@ from transformers import RobertaConfig
 from custom_peft import PromptTuningConfig, TaskType, PromptTuningInit, get_peft_model
 from trainers.base import BaseTrainer
 from utils.custom import is_rank_0
-from utils.model import IDPG, IDPGSoftPromptGenerator, IDPGSoftPromptGenerator_wPHM
+from utils.model import IDPG, IDPGSoftPromptGenerator as EmbeddingEncoder, IDPGSoftPromptGenerator_wPHM as EmbeddingEncoder_wPHM
 from utils.modeling_roberta import RobertaForMaskedLM
 from utils.xformer import load_base_model
 
@@ -44,9 +44,9 @@ class Trainer(BaseTrainer):
 		# # Note 2: Also, RobertaModel by default has add_pooling_layer=True which adds a pooling layer on top of the encoder.
 		# 			Since ckpt does not have it, it will be init and throw a msg. It is fine since we are not using it.
 		if self.args.use_phm_layers:
-			soft_prompt_gen = IDPGSoftPromptGenerator_wPHM(self.args, n=self.args.phm_n)
+			soft_prompt_gen = EmbeddingEncoder_wPHM(self.args, n=self.args.phm_n)
 		else:
-			soft_prompt_gen = IDPGSoftPromptGenerator(self.args)
+			soft_prompt_gen = EmbeddingEncoder(self.args)
 		
 		self.logger.info("Building the Soft Prompt Generator done.")
 		
