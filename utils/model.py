@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.nn import MSELoss, CrossEntropyLoss, BCEWithLogitsLoss
 from transformers.modeling_outputs import SequenceClassifierOutput
 
-from custom_peft import PeftIDPGModelForMaskedLM, PeftModelForMaskedLM, PeftCVAEModelForMaskedLM
+from custom_peft import PeftIDPGModelForMaskedLM, PeftModelForMaskedLM, PeftLopaModelForMaskedLM
 from utils.xformer import load_base_model, get_huggingface_path
 from torch.nn.parameter import Parameter
 from torch import Tensor
@@ -454,7 +454,7 @@ class LOPA(torch.nn.Module):
 			self,
 			config,
 			latent_prompt_gen: LatentPromptAttentionGenerator,
-			seq_classifier: PeftCVAEModelForMaskedLM
+			seq_classifier: PeftLopaModelForMaskedLM
 	):
 		super(LOPA, self).__init__()
 		self.latent_prompt_gen = latent_prompt_gen

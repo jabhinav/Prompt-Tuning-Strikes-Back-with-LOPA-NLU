@@ -26,7 +26,7 @@ class Trainer(BaseTrainer):
 			config_class=RobertaConfig
 		)
 		peft_config = PromptTuningConfig(
-			task_type=TaskType.CVAE_MASKED_LM,
+			task_type=TaskType.LOPA_MASKED_LM,
 			prompt_tuning_init=PromptTuningInit.RANDOM,  # TEXT for text, RANDOM for random
 			num_virtual_tokens=self.args.num_virtual_tokens,
 		)

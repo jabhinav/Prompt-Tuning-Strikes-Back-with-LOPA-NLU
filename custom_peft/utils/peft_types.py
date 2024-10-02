@@ -33,7 +33,7 @@ class PeftType(str, enum.Enum):
 class TaskType(str, enum.Enum):
     SEQ_CLS = "SEQ_CLS"
     MASKED_LM = "MASKED_LM"  # Custom Added
-    CVAE_MASKED_LM = "CVAE_MASKED_LM"  # Custom Added
+    LOPA_MASKED_LM = "LOPA_MASKED_LM"  # Custom Added
     IDPG_MASKED_LM = "IDPG_MASKED_LM"  # Custom Added
     DEPT_MASKED_LM = "DEPT_MASKED_LM"  # Custom Added
     SEQ_2_SEQ_LM = "SEQ_2_SEQ_LM"

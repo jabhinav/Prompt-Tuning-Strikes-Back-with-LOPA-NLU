@@ -76,7 +76,7 @@ PEFT_TYPE_TO_MODEL_MAPPING = {
 }
 
 
-class PeftCvaeModel(PushToHubMixin, torch.nn.Module):
+class PeftLopaModel(PushToHubMixin, torch.nn.Module):
 	"""
 	Base model encompassing various Peft methods.
 
@@ -819,7 +819,7 @@ class PeftCvaeModel(PushToHubMixin, torch.nn.Module):
 		card.save(filename)
 
 
-class PeftCVAEModelForMaskedLM(PeftCvaeModel):
+class PeftLopaModelForMaskedLM(PeftLopaModel):
 	"""
 	Peft model for masked language modeling tasks
 

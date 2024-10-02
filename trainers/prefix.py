@@ -26,7 +26,7 @@ class Trainer(BaseTrainer):
 		)
 		
 		# Get the config
-		if self.args.peft_method == 'prefix'
+		if self.args.peft_method == 'prefix':
 			pt_config = PrefixTuningConfig(
 				task_type=TaskType.MASKED_LM,
 				num_virtual_tokens=self.args.num_virtual_tokens,

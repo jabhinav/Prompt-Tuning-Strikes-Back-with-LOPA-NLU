@@ -46,9 +46,9 @@ from .peft_model import (
     PeftModelForMaskedLM,  # My custom
 )
 # ################################################ My custom  ######################################### #
-from .peft_cvae_model import (
-    PeftCvaeModel,
-    PeftCVAEModelForMaskedLM,
+from .peft_lopa_model import (
+    PeftLopaModel,
+    PeftLopaModelForMaskedLM,
 )
 
 from .peft_idpg_baseline_model import (
