@@ -18,7 +18,7 @@ class Trainer(BaseTrainer):
 	
 	def _build_model(self):
 		# 1) Build the Sequence Classifier (It actually is a mask token classifier) wrapped with PEFT
-		seq_cls_config, seq_classifier = load_base_model(
+		fm_config, foundation_model = load_base_model(
 			self.args,
 			model_type=self.args.model_type,
 			model_name_or_path=self.args.model_name_or_path,
@@ -30,13 +30,13 @@ class Trainer(BaseTrainer):
 			prompt_tuning_init=PromptTuningInit.RANDOM,  # TEXT for text, RANDOM for random
 			num_virtual_tokens=self.args.num_virtual_tokens,
 		)
-		seq_classifier = get_peft_model(seq_classifier, peft_config)  # This will freeze the base model
+		foundation_model = get_peft_model(foundation_model, peft_config)  # This will freeze the base model
 		
 		self.args.total_virtual_tokens = self.args.num_virtual_tokens * peft_config.num_transformer_submodules
 		self.args.word_embedding_dim = peft_config.token_dim
-		seq_cls_config.total_virtual_tokens = self.args.total_virtual_tokens
+		fm_config.total_virtual_tokens = self.args.total_virtual_tokens
 		
-		self.logger.info("Building the Sequence Classifier done.")
+		self.logger.info("Building the Foundation Model done.")
 		
 		# 2) Build the Latent Prompt Generator
 		# # Note 1: If using RobertaModel, some weights in ckpt 'roberta-large' will not be loaded like
@@ -48,8 +48,8 @@ class Trainer(BaseTrainer):
 		self.logger.info("Building the Instance-Specific Soft Prompt Generator done.")
 		
 		# 3) Build the CVAE model
-		model = LOPA(seq_cls_config, inst_specific_soft_prompt_gen, seq_classifier)
-		return seq_cls_config, model
+		model = LOPA(fm_config, inst_specific_soft_prompt_gen, foundation_model)
+		return fm_config, model
 	
 	def init_trackers(self):
 		run_name = self.args.run_name if self.args.run_name is not None else f"GLUE/{self.args.dataset_name}/lopa"
@@ -64,7 +64,7 @@ class Trainer(BaseTrainer):
 	def count_parameters(self):
 		lp_gen_trainable_params = sum(p.numel() for p in self.model.latent_prompt_gen.parameters() if p.requires_grad)
 		lp_gen_all_params = sum(p.numel() for p in self.model.latent_prompt_gen.parameters())
-		seq_cls_trainable_params, seq_cls_all_params = self.model.seq_classifier.get_nb_trainable_parameters()
+		seq_cls_trainable_params, seq_cls_all_params = self.model.foundation_model.get_nb_trainable_parameters()
 		return lp_gen_trainable_params, lp_gen_all_params, seq_cls_trainable_params, seq_cls_all_params
 	
 	def forward(self, batch):
@@ -92,7 +92,7 @@ class Trainer(BaseTrainer):
 		# Save Sequence Classifier in steps
 		
 		# First save the PEFT part
-		model.seq_classifier.save_pretrained(
+		model.foundation_model.save_pretrained(
 			save_directory=os.path.join(save_at, "PEFT"),
 			is_main_process=is_rank_0(),
 		)

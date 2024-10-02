@@ -19,7 +19,7 @@ class Trainer(BaseTrainer):
 	
 	def _build_model(self):
 		# Load the Base model
-		seq_cls_config, seq_classifier = load_base_model(
+		fm_config, foundation_model = load_base_model(
 			self.args,
 			model_type=self.args.model_type,
 			model_name_or_path=self.args.model_name_or_path,
@@ -34,24 +34,24 @@ class Trainer(BaseTrainer):
 			num_virtual_tokens=5,  # Set to 5 for DEPT with which number of params match PT(m=10)
 			tokenizer_name_or_path=self.args.tokenizer_name,
 			r=4,  # LoRA parameter in the paper
-			token_dim=seq_classifier.config.hidden_size,
+			token_dim=foundation_model.config.hidden_size,
 			max_length=self.args.max_length,
 			save_lora_embeddings=True,
 		)
 		
 		# Initialize the model adapters
-		seq_classifier = get_peft_model(seq_classifier, dept_config)
+		foundation_model = get_peft_model(foundation_model, dept_config)
 		
 		self.args.total_virtual_tokens = 5 * dept_config.num_transformer_submodules
 		self.args.word_embedding_dim = dept_config.token_dim
-		seq_cls_config.total_virtual_tokens = 5
+		fm_config.total_virtual_tokens = 5
 		
-		self.logger.info("Building the Sequence Classifier done.")
+		self.logger.info("Building the Foundation Model done.")
 		
 		# Wrap the model with a dummy model (which simply shifts the mask token's pos to the right by num_virtual_tokens)
-		seq_classifier = DummyModel(seq_cls_config, seq_classifier)
+		model = DummyModel(fm_config, foundation_model)
 		
-		return seq_cls_config, seq_classifier
+		return fm_config, model
 	
 	def _build_optimizer(self):
 		no_decay = ["bias", "LayerNorm.weight"]
@@ -60,8 +60,8 @@ class Trainer(BaseTrainer):
 		non_lora_embedding_decay = []
 		for name, param in self.model.named_parameters():
 			if name in [
-				"seq_classifier.prompt_encoder.default.lora_embedding_A",
-				"seq_classifier.prompt_encoder.default.lora_embedding_B"
+				"foundation_model.prompt_encoder.default.lora_embedding_A",
+				"foundation_model.prompt_encoder.default.lora_embedding_B"
 			]:
 				lora_embedding.append(param)
 			else:
@@ -100,7 +100,7 @@ class Trainer(BaseTrainer):
 			)
 	
 	def count_parameters(self):
-		trainable_params, all_params = self.model.seq_classifier.get_nb_trainable_parameters()
+		trainable_params, all_params = self.model.foundation_model.get_nb_trainable_parameters()
 		return None, None, trainable_params, all_params
 	
 	def forward(self, batch):
@@ -111,6 +111,7 @@ class Trainer(BaseTrainer):
 		return output
 	
 	def save(self, dir_tag: str):
+		# TODO: Save both adapter types: soft prompt and lora weights. Below does not save one of them
 		
 		# Create a directory to save the model
 		save_at = os.path.join(self.args.log_dir, dir_tag)
@@ -120,7 +121,7 @@ class Trainer(BaseTrainer):
 		model = self.accelerator.unwrap_model(self.model)
 		
 		# Save model
-		model.seq_classifier.save_pretrained(
+		model.foundation_model.save_pretrained(
 			save_directory=os.path.join(save_at, "PEFT"),
 			is_main_process=is_rank_0(),
 		)

@@ -86,6 +86,12 @@ def get_config():
 	parser.add_argument("--num_warmup_steps", type=int, default=0, help="Can also be defined within script!")
 	parser.add_argument("--save_every", type=int, default=0)
 	
+	# ######################################## Testing (eval.py exclusive args) ##################################### #
+	parser.add_argument("--eval_data_type", type=str, defaut='dev', choices=['dev', 'test'], help="Used in eval.py")
+	parser.add_argument("--do_evaluation", type=bool, default=True, help="Compute the evaluation metrics. Used in eval.py")
+	parser.add_argument("--do_prediction", type=bool, default=True, help="Compute the predictions. Used in eval.py")
+	parser.add_argument("--force_prediction_in_valid_labels", type=bool, default=True, help="Force predictions in valid labels. Used in eval.py")
+	
 	# #################################################### Data #################################################### #
 	parser.add_argument("--max_length", type=int, default=256)
 	parser.add_argument("--pad_to_max_length", default=False, help=" Otherwise, dynamic padding is used.")
@@ -98,6 +104,9 @@ def get_config():
 						help="Where to store the pretrained models downloaded from huggingface.co")
 	parser.add_argument('--load_base_from_path', type=str, default=None)
 	parser.add_argument('--log_dir', type=str, default=None)
+	parser.add_argument('--load_adapter_from', type=str, default=None)
+	parser.add_argument('--clf_predictor_path', type=str, default=None)
+
 	
 	# #################################################### Others ################################################ #
 	parser.add_argument('--seed', type=int, default=9876, help="random seed for initialization")

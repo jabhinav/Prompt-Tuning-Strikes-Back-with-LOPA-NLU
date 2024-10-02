@@ -872,6 +872,8 @@ class PeftDEPTModelForMaskedLM(PeftDEPTModel):
 				),
 				dim=1,
 			).long()
+			
+		# Apply the LoRA update to the input embeddings
 		if inputs_embeds is None:
 			batch_size = input_ids.shape[0]
 			inputs_embeds = self.word_embeddings(input_ids)
@@ -879,10 +881,12 @@ class PeftDEPTModelForMaskedLM(PeftDEPTModel):
 			lora_embedding_B = self.prompt_encoder[self.active_adapter].lora_embedding_B
 			scaling = self.prompt_encoder[self.active_adapter].scaling
 			inputs_embeds += scaling * (lora_embedding_A @ lora_embedding_B).repeat(batch_size, 1, 1)
-			
+		
+		# Get the soft prompt embeddings
 		prompts = self.get_prompt(batch_size=batch_size)
 		prompts = prompts.to(inputs_embeds.dtype)
 		
+		# Concatenate the prompts to the input embeddings
 		inputs_embeds = torch.cat((prompts, inputs_embeds), dim=1)
 		return self.base_model(inputs_embeds=inputs_embeds, **kwargs)
 	

@@ -453,12 +453,12 @@ class LOPA(torch.nn.Module):
 	def __init__(
 			self,
 			config,
-			latent_prompt_gen: LatentPromptAttentionGenerator,
-			seq_classifier: PeftLopaModelForMaskedLM
+			inst_specific_soft_prompt_gen: LatentPromptAttentionGenerator,
+			foundation_model: PeftLopaModelForMaskedLM
 	):
 		super(LOPA, self).__init__()
-		self.latent_prompt_gen = latent_prompt_gen
-		self.seq_classifier = seq_classifier
+		self.latent_prompt_gen = inst_specific_soft_prompt_gen
+		self.foundation_model = foundation_model
 		
 		# Set the config same as the classifier encoder
 		self.config = config
@@ -476,7 +476,7 @@ class LOPA(torch.nn.Module):
 		batch['mask_pos'] = batch['mask_pos'] + self.config.total_virtual_tokens
 		
 		# Call the sequence classifier
-		output = self.seq_classifier(
+		output = self.foundation_model(
 			latent_prompt_att_weights=latent_att_weights,
 			input_ids=batch['input_ids'],
 			attention_mask=batch['attention_mask'],
@@ -493,12 +493,12 @@ class IDPG(torch.nn.Module):
 	def __init__(
 			self,
 			config,
-			latent_prompt_gen: IDPGSoftPromptGenerator,
-			seq_classifier: PeftIDPGModelForMaskedLM
+			soft_prompt_gen: IDPGSoftPromptGenerator,
+			foundation_model: PeftIDPGModelForMaskedLM
 	):
 		super(IDPG, self).__init__()
-		self.latent_prompt_gen = latent_prompt_gen
-		self.seq_classifier = seq_classifier
+		self.latent_prompt_gen = soft_prompt_gen
+		self.foundation_model = foundation_model
 		
 		# Set the config same as the classifier
 		self.config = config
@@ -515,7 +515,7 @@ class IDPG(torch.nn.Module):
 		batch['mask_pos'] = batch['mask_pos'] + self.config.total_virtual_tokens
 		
 		# Call the sequence classifier
-		output = self.seq_classifier(
+		output = self.foundation_model(
 			soft_prompt=soft_prompt,
 			input_ids=batch['input_ids'],
 			attention_mask=batch['attention_mask'],
@@ -528,9 +528,9 @@ class IDPG(torch.nn.Module):
 
 
 class DummyModel(torch.nn.Module):
-	def __init__(self, config, seq_classifier: PeftModelForMaskedLM):
+	def __init__(self, config, foundation_model: PeftModelForMaskedLM):
 		super(DummyModel, self).__init__()
-		self.seq_classifier = seq_classifier
+		self.foundation_model = foundation_model
 		
 		# Set the config same as the classifier
 		self.config = config
@@ -540,7 +540,7 @@ class DummyModel(torch.nn.Module):
 		batch['mask_pos'] = batch['mask_pos'] + self.config.total_virtual_tokens
 		
 		# Call the sequence classifier
-		output = self.seq_classifier(
+		output = self.foundation_model(
 			input_ids=batch['input_ids'],
 			attention_mask=batch['attention_mask'],
 			token_type_ids=batch['token_type_ids'],

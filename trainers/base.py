@@ -53,7 +53,7 @@ class BaseTrainer(object):
 		self.epoch: int = 0
 		
 		# setup tokenizer
-		logger.info(f"[INFO] Loading Sequence Classifier's tokenizer from {get_huggingface_path(args.model_type)}")
+		logger.info(f"[INFO] Loading Foundation Model's tokenizer from {get_huggingface_path(args.model_type)}")
 		self.tokenizer = load_tokenizer(args, args.model_type, args.tokenizer_name)
 		logger.info(f"[INFO] Loading Soft (Latent) Prompt Generator's tokenizer from {get_huggingface_path(args.enc_model_type)}")
 		self.lp_gen_tokenizer = load_tokenizer(args, args.enc_model_type, get_huggingface_path(args.enc_model_type))
@@ -71,16 +71,16 @@ class BaseTrainer(object):
 			self.logger.info(f"[INFO] Building model done in {(end - start) / 1e6:.2f}ms")
 			
 			# Get the number of trainable parameters
-			lp_gen_trainable_params, lp_gen_all_params, seq_cls_trainable_params, seq_cls_all_params = self.count_parameters()
+			lp_gen_trainable_params, lp_gen_all_params, fm_trainable_params, fm_all_params = self.count_parameters()
 			if lp_gen_all_params is not None and lp_gen_trainable_params is not None:
 				msg = (
 					f"Soft (Latent) Prompt Generator: trainable params: {lp_gen_trainable_params:,d} || all params: {lp_gen_all_params:,d} ||"
 					f" trainable%: {100 * lp_gen_trainable_params / lp_gen_all_params}")
 				self.logger.info(msg)
-			if seq_cls_all_params is not None and seq_cls_trainable_params is not None:
+			if fm_all_params is not None and fm_trainable_params is not None:
 				msg = (
-					f"Sequence Classifier: trainable params: {seq_cls_trainable_params:,d} || all params: {seq_cls_all_params:,d} ||"
-					f" trainable%: {100 * seq_cls_trainable_params / seq_cls_all_params}")
+					f"Foundation Model: trainable params: {fm_trainable_params:,d} || all params: {fm_all_params:,d} ||"
+					f" trainable%: {100 * fm_trainable_params / fm_all_params}")
 				self.logger.info(msg)
 		
 		# Get data

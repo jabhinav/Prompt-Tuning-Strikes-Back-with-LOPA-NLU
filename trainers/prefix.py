@@ -65,7 +65,7 @@ class Trainer(BaseTrainer):
 			)
 	
 	def count_parameters(self):
-		trainable_params, all_params = self.model.seq_classifier.get_nb_trainable_parameters()
+		trainable_params, all_params = self.model.foundation_model.get_nb_trainable_parameters()
 		return None, None, trainable_params, all_params
 	
 	def forward(self, batch):
@@ -85,7 +85,7 @@ class Trainer(BaseTrainer):
 		model = self.accelerator.unwrap_model(self.model)
 		
 		# Save model
-		model.seq_classifier.save_pretrained(
+		model.foundation_model.save_pretrained(
 			save_directory=os.path.join(save_at, "PEFT"),
 			is_main_process=is_rank_0(),
 		)

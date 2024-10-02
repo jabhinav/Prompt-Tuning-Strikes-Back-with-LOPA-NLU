@@ -58,7 +58,7 @@ if TYPE_CHECKING:
 MODEL_TYPE_TO_PEFT_MODEL_MAPPING = {
     "SEQ_CLS": PeftModelForSequenceClassification,
     "MASKED_LM": PeftModelForMaskedLM,  # My custom model
-    "CVAE_MASKED_LM": PeftLopaModelForMaskedLM,  # My custom model
+    "LOPA_MASKED_LM": PeftLopaModelForMaskedLM,  # My custom model
     "IDPG_MASKED_LM": PeftIDPGModelForMaskedLM,  # My custom model
     "DEPT_MASKED_LM": PeftDEPTModelForMaskedLM,  # My custom model
     "SEQ_2_SEQ_LM": PeftModelForSeq2SeqLM,

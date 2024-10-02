@@ -18,7 +18,7 @@ class Trainer(BaseTrainer):
 	
 	def _build_model(self):
 		# 1) Build the Sequence Classifier (It actually is a mask token classifier) wrapped with PEFT
-		seq_cls_config, seq_classifier = load_base_model(
+		fm_config, foundation_model = load_base_model(
 			self.args,
 			model_type=self.args.model_type,
 			model_name_or_path=self.args.model_name_or_path,
@@ -30,13 +30,13 @@ class Trainer(BaseTrainer):
 			prompt_tuning_init=PromptTuningInit.RANDOM,  # TEXT for text, RANDOM for random
 			num_virtual_tokens=self.args.num_virtual_tokens,
 		)
-		seq_classifier = get_peft_model(seq_classifier, peft_config)  # This will freeze the base model
+		foundation_model = get_peft_model(foundation_model, peft_config)  # This will freeze the base model
 		
 		self.args.total_virtual_tokens = self.args.num_virtual_tokens * peft_config.num_transformer_submodules
 		self.args.word_embedding_dim = peft_config.token_dim
-		seq_cls_config.total_virtual_tokens = self.args.total_virtual_tokens
+		fm_config.total_virtual_tokens = self.args.total_virtual_tokens
 		
-		self.logger.info("Building the Sequence Classifier done.")
+		self.logger.info("Building the Foundation Model done.")
 		
 		# 2) Build the Latent Prompt Generator
 		# # Note 1: If using RobertaModel, some weights in ckpt 'roberta-large' will not be loaded like
@@ -51,8 +51,8 @@ class Trainer(BaseTrainer):
 		self.logger.info("Building the Soft Prompt Generator done.")
 		
 		# 3) Build the IDPG model
-		model = IDPG(seq_cls_config, soft_prompt_gen, seq_classifier)
-		return seq_cls_config, model
+		model = IDPG(fm_config, soft_prompt_gen, foundation_model)
+		return fm_config, model
 	
 	def init_trackers(self):
 		# Initialize the trackers
@@ -69,7 +69,7 @@ class Trainer(BaseTrainer):
 	def count_parameters(self):
 		lp_gen_trainable_params = sum(p.numel() for p in self.model.latent_prompt_gen.parameters() if p.requires_grad)
 		lp_gen_all_params = sum(p.numel() for p in self.model.latent_prompt_gen.parameters())
-		seq_cls_trainable_params, seq_cls_all_params = self.model.seq_classifier.get_nb_trainable_parameters()
+		seq_cls_trainable_params, seq_cls_all_params = self.model.foundation_model.get_nb_trainable_parameters()
 		return lp_gen_trainable_params, lp_gen_all_params, seq_cls_trainable_params, seq_cls_all_params
 	
 	def forward(self, batch):
@@ -96,15 +96,13 @@ class Trainer(BaseTrainer):
 		torch.save(state_dict, os.path.join(save_at, "lp_generator.pt"))
 		del state_dict
 		
-		# Save Sequence Classifier in steps
-		
-		# First save the PEFT part
-		model.seq_classifier.save_pretrained(
+		# Save the PEFT part
+		model.foundation_model.save_pretrained(
 			save_directory=os.path.join(save_at, "PEFT"),
 			is_main_process=is_rank_0(),
 		)
 		
-		# # Secondly save the classifier head
+		# # Secondly save the classifier head [Not needed for our implementation of IDPG]
 		# head_state_dict = model.seq_classifier.classifier.state_dict()
 		# torch.save(head_state_dict, os.path.join(save_at, "classifier_head.pt"))
 		# del head_state_dict
