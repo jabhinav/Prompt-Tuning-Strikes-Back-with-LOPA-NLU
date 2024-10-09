@@ -32,7 +32,7 @@ def main():
 		from trainers.pt import Trainer
 		trainer = Trainer(args, logger)
 		
-	elif args.peft_method == 'prefix' or 'ptuningv2':
+	elif args.peft_method == 'prefix' or args.peft_method == 'ptuningv2':
 		from trainers.prefix import Trainer
 		trainer = Trainer(args, logger)
 	
