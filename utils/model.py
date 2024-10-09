@@ -18,7 +18,7 @@ class LatentPromptAttentionGenerator(torch.nn.Module):
 	"""
 	Used in LOPA to generate the instance-specific attention weights, Z_I before the gating function.
 	"""
-	def __init__(self, args, use_bias=True, freeze_base=False, MLP_h=256):
+	def __init__(self, args, use_bias=True, freeze_base=False, MLP_h=None):
 		super(LatentPromptAttentionGenerator, self).__init__()
 		
 		config, base = load_base_model(
@@ -138,7 +138,7 @@ class LatentPromptAttentionGenerator(torch.nn.Module):
 
 
 class IDPGSoftPromptGenerator(torch.nn.Module):
-	def __init__(self, args, use_bias=True, MLP_h=256):
+	def __init__(self, args, use_bias=True, freeze_base=True, MLP_h=256):
 		super(IDPGSoftPromptGenerator, self).__init__()
 		
 		config, base = load_base_model(
@@ -152,8 +152,10 @@ class IDPGSoftPromptGenerator(torch.nn.Module):
 		self.base = base
 		
 		# Base model does not require any training - freeze the weights
-		for param in self.base.parameters():
-			param.requires_grad = False
+		self.freeze_base = freeze_base
+		if self.freeze_base:
+			for param in self.base.parameters():
+				param.requires_grad = False
 		
 		# For each virtual token, predict the embedding
 		self.config.n_virtual_tokens = self.args.total_virtual_tokens
@@ -184,7 +186,6 @@ class IDPGSoftPromptGenerator(torch.nn.Module):
 		self.layer_up_project.weight.data.normal_(mean=0.0, std=self.config_initializer_range)
 		self.layer_up_project.bias.data.zero_()
 	
-	@torch.no_grad()
 	def get_instance_embedding(self, input_ids, attention_mask=None, token_type_ids=None):
 		if attention_mask is None:
 			# Attend to all tokens
@@ -202,11 +203,19 @@ class IDPGSoftPromptGenerator(torch.nn.Module):
 			x = x[:, 0, :]  # take <s> which is the first token as seq. representation (equiv. to [CLS])
 		else:
 			raise NotImplementedError
-		return x.detach()
+		return x
 	
 	def forward(self, input_ids, attention_mask=None, token_type_ids=None):
 		
-		inst_embedding = self.get_instance_embedding(input_ids, attention_mask, token_type_ids)
+		if self.freeze_base:
+			with torch.no_grad():
+				# Get the instance embedding
+				inst_embedding = self.get_instance_embedding(input_ids, attention_mask, token_type_ids)
+				inst_embedding = inst_embedding.detach()
+		
+		else:
+			# Get the instance embedding
+			inst_embedding = self.get_instance_embedding(input_ids, attention_mask, token_type_ids)
 		
 		# Predict the row weights
 		soft_prompt_embedding = self._dropout(inst_embedding)
