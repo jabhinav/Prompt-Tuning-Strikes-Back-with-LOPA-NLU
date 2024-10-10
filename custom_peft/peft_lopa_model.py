@@ -900,14 +900,17 @@ class PeftLopaModelForMaskedLM(PeftLopaModel):
 		if latent_prompt_att_weights is None:
 			raise ValueError("latent_attention_weights is required for cVAE-based prompt tuning")
 			
-		# For shared prompts across instances
+		# # For LoPA
 		prompts = prompts * latent_prompt_att_weights
 		
-		# For additive approach [For simply an ablation study]
+		# # [Ablation study] For additive approach <- not useful since IDPG is already additive
 		# prompts = prompts + latent_prompt_att_weights
 		
-		# For no sharing [For simply an ablation study]
-		# prompts = latent_attention_weights
+		# # [Ablation study] For no sharing <- bias is absorbed in the inst-specific component post gating
+		# prompts = latent_prompt_att_weights
+		
+		# # [Ablation study] Concatenation
+		# prompts = torch.cat((prompts, latent_prompt_att_weights), dim=1)
 		
 		inputs_embeds = torch.cat((prompts, inputs_embeds), dim=1)
 		return self.base_model(inputs_embeds=inputs_embeds, **kwargs)

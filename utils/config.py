@@ -87,7 +87,7 @@ def get_config():
 	parser.add_argument("--save_every", type=int, default=0)
 	
 	# ######################################## Testing (eval.py exclusive args) ##################################### #
-	parser.add_argument("--eval_data_type", type=str, defaut='dev', choices=['dev', 'test'], help="Used in eval.py")
+	parser.add_argument("--eval_data_type", type=str, default='dev', choices=['dev', 'test'], help="Used in eval.py")
 	parser.add_argument("--do_evaluation", type=bool, default=True, help="Compute the evaluation metrics. Used in eval.py")
 	parser.add_argument("--do_prediction", type=bool, default=True, help="Compute the predictions. Used in eval.py")
 	parser.add_argument("--force_prediction_in_valid_labels", type=bool, default=True, help="Force predictions in valid labels. Used in eval.py")
