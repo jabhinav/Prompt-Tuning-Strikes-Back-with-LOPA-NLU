@@ -910,6 +910,16 @@ class PeftLopaModelForMaskedLM(PeftLopaModel):
 		# prompts = latent_prompt_att_weights
 		
 		# # [Ablation study] Concatenation
+		"""
+		Instructions:
+		Manually change the following in the code:
+			- Here:
+				- For prefix_attention_mask, token_type_ids: use 2 * peft_config.num_virtual_tokens
+				- Uncomment the following line > prompts = torch.cat((prompts, latent_prompt_att_weights), dim=1)
+			- In utils/model.py(LOPA):
+				- Update > latent_att_weights = att_logits  # Using Z_I instead of g(Z_I)
+				- Update > batch['mask_pos'] = batch['mask_pos'] + 2 * self.config.total_virtual_tokens
+		"""
 		# prompts = torch.cat((prompts, latent_prompt_att_weights), dim=1)
 		
 		inputs_embeds = torch.cat((prompts, inputs_embeds), dim=1)
