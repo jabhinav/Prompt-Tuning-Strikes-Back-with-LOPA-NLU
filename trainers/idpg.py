@@ -91,8 +91,8 @@ class Trainer(BaseTrainer):
 		
 		# Save the latent prompt generator
 		state_dict = model.latent_prompt_gen.state_dict()
-		# Remove the enc.base layers before saving [IDPG-specific]
-		state_dict = {k: v for k, v in state_dict.items() if "base" not in k}
+		# # Remove the enc.base layers before saving [IDPG-specific, if not training Enc]
+		# state_dict = {k: v for k, v in state_dict.items() if "base" not in k}
 		torch.save(state_dict, os.path.join(save_at, "lp_generator.pt"))
 		del state_dict
 		
