@@ -380,8 +380,8 @@ class BaseTrainer(object):
 			assert len(label_id) == 1
 			label_ids.append(label_id[0])
 		
-		if self.accelerator.is_main_process:
-			print("[DEBUG] Label IDs: ", label_ids)
+		# if self.accelerator.is_main_process:
+		# 	print("[DEBUG] Label IDs: ", label_ids)
 		return label_ids
 	
 	def _eval_epoch(self, dataloader):
