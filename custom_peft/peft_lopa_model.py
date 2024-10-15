@@ -864,9 +864,14 @@ class PeftLopaModelForMaskedLM(PeftLopaModel):
 		
 		batch_size = _get_batch_size(input_ids, inputs_embeds)
 		
+		if peft_config.lopa_type == 'lopa-concat':
+			num_virtual_tokens = 2 * peft_config.num_virtual_tokens
+		else:
+			num_virtual_tokens = peft_config.num_virtual_tokens
+		
 		if attention_mask is not None:
 			# concat prompt attention mask
-			prefix_attention_mask = torch.ones(batch_size, peft_config.num_virtual_tokens).to(attention_mask.device)
+			prefix_attention_mask = torch.ones(batch_size, num_virtual_tokens).to(attention_mask.device)
 			attention_mask = torch.cat((prefix_attention_mask, attention_mask), dim=1)
 		
 		if kwargs.get("position_ids", None) is not None:
@@ -886,7 +891,7 @@ class PeftLopaModelForMaskedLM(PeftLopaModel):
 		if kwargs.get("token_type_ids", None) is not None:
 			kwargs["token_type_ids"] = torch.cat(
 				(
-					torch.zeros(batch_size, peft_config.num_virtual_tokens).to(self.word_embeddings.weight.device),
+					torch.zeros(batch_size, num_virtual_tokens).to(self.word_embeddings.weight.device),
 					kwargs["token_type_ids"],
 				),
 				dim=1,
@@ -900,27 +905,17 @@ class PeftLopaModelForMaskedLM(PeftLopaModel):
 		if latent_prompt_att_weights is None:
 			raise ValueError("latent_attention_weights is required for cVAE-based prompt tuning")
 			
-		# # For LoPA
-		prompts = prompts * latent_prompt_att_weights
-		
-		# # [Ablation study] For additive approach <- not useful since IDPG is already additive
-		# prompts = prompts + latent_prompt_att_weights
-		
-		# # [Ablation study] For no sharing <- bias is absorbed in the inst-specific component post gating
-		# prompts = latent_prompt_att_weights
-		
-		# # [Ablation study] Concatenation
-		"""
-		Instructions:
-		Manually change the following in the code:
-			- Here:
-				- For prefix_attention_mask, token_type_ids: use 2 * peft_config.num_virtual_tokens
-				- Uncomment the following line > prompts = torch.cat((prompts, latent_prompt_att_weights), dim=1)
-			- In utils/model.py(LOPA):
-				- Update > latent_att_weights = att_logits  # Using Z_I instead of g(Z_I)
-				- Update > batch['mask_pos'] = batch['mask_pos'] + 2 * self.config.total_virtual_tokens
-		"""
-		# prompts = torch.cat((prompts, latent_prompt_att_weights), dim=1)
+		# # For LoPA type
+		if peft_config.lopa_type == 'lopa':
+			prompts = prompts * latent_prompt_att_weights
+		elif peft_config.lopa_type == 'lopa-concat':
+			prompts = torch.cat((prompts, latent_prompt_att_weights), dim=1)
+		elif peft_config.lopa_type == 'lopa-add':
+			prompts = prompts + latent_prompt_att_weights
+		elif peft_config.lopa_type == 'lopa-max':
+			prompts = torch.max(prompts, latent_prompt_att_weights)
+		else:
+			raise ValueError("Invalid LoPA type: {}".format(peft_config.lopa_type))
 		
 		inputs_embeds = torch.cat((prompts, inputs_embeds), dim=1)
 		return self.base_model(inputs_embeds=inputs_embeds, **kwargs)

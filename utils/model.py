@@ -468,8 +468,6 @@ class LOPA(torch.nn.Module):
 		super(LOPA, self).__init__()
 		self.latent_prompt_gen = inst_specific_soft_prompt_gen
 		self.foundation_model = foundation_model
-		
-		# Set the config same as the classifier encoder
 		self.config = config
 	
 	def forward(self, batch):
@@ -479,14 +477,20 @@ class LOPA(torch.nn.Module):
 			attention_mask=batch['enc_attention_mask'],
 			token_type_ids=batch['enc_token_type_ids']
 		)
-		latent_att_weights = torch.sigmoid(att_logits)
+		if self.config.lopa_type == 'lopa':
+			# -> g(Z_I) = sigmoid(Z_I)
+			inst_specific_component = torch.sigmoid(att_logits)
+		else:
+			# -> g(Z_I) = Z_I
+			inst_specific_component = att_logits
 		
 		# Shift the position of the mask tokens to the right by total_virtual_tokens
-		batch['mask_pos'] = batch['mask_pos'] + self.config.total_virtual_tokens
+		token_offset = 2 * self.config.total_virtual_tokens if self.config.lopa_type == 'lopa-concat' else self.config.total_virtual_tokens
+		batch['mask_pos'] = batch['mask_pos'] + token_offset
 		
 		# Call the sequence classifier
 		output = self.foundation_model(
-			latent_prompt_att_weights=latent_att_weights,
+			latent_prompt_att_weights=inst_specific_component,
 			input_ids=batch['input_ids'],
 			attention_mask=batch['attention_mask'],
 			token_type_ids=batch['token_type_ids'],

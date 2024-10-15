@@ -49,6 +49,7 @@ def get_config():
 	
 	# For LOPA
 	parser.add_argument("--lp_rank", type=int, default=4, help="Rank of the decoded row/col vectors.")
+	parser.add_argument("--lopa_type", type=str, default='lopa', choices=['lopa', 'lopa-concat', 'lopa-add', 'lopa-max'])
 	
 	# For PHM - Currently only used by IDPG
 	parser.add_argument("--use_phm_layers", type=bool, default=True)

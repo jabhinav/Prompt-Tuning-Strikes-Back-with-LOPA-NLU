@@ -30,6 +30,10 @@ class Trainer(BaseTrainer):
 			prompt_tuning_init=PromptTuningInit.RANDOM,  # TEXT for text, RANDOM for random
 			num_virtual_tokens=self.args.num_virtual_tokens,
 		)
+		# Add LoPA specific config
+		peft_config.lopa_type = self.args.lopa_type
+		fm_config.lopa_type = self.args.lopa_type
+		
 		foundation_model = get_peft_model(foundation_model, peft_config)  # This will freeze the base model
 		
 		self.args.total_virtual_tokens = self.args.num_virtual_tokens * peft_config.num_transformer_submodules
